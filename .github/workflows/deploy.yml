@@ -23,12 +23,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Only the web/ folder is published. Local .css/.js references in HTML
+      # get ?v=<commit> appended so each deploy busts browser caches for them.
+      - name: Prepare site
+        run: |
+          cp -r web _site
+          version="${GITHUB_SHA::7}"
+          find _site -name '*.html' -exec sed -i -E \
+            "s#((href|src)=\"[^\":?]+\.(css|js))\"#\1?v=${version}\"#g" {} +
+          grep -rhoE '(href|src)="[^"]+\?v=[^"]+"' _site --include='*.html'
+
       - uses: actions/configure-pages@v5
 
-      # Only the web/ folder is published
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: web
+          path: _site
 
       - id: deployment
         uses: actions/deploy-pages@v4
