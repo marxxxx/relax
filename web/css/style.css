@@ -1,0 +1,102 @@
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --glass:rgba(24,28,26,.52);
+  --glass-strong:rgba(24,28,26,.72);
+  --ink:#f3efe4;
+  --ink-soft:rgba(243,239,228,.68);
+  --line:rgba(243,239,228,.16);
+  --ember:#e8a547;
+  --pine:#2f4a35;
+  --bg:#1a2420;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --glass:rgba(16,20,19,.58);
+    --glass-strong:rgba(16,20,19,.78);
+    --ink:#f3efe4;
+    --ink-soft:rgba(243,239,228,.66);
+    --line:rgba(243,239,228,.14);
+    --bg:#101614;
+  }
+}
+:root[data-theme="dark"]{
+  --glass:rgba(16,20,19,.58);
+  --glass-strong:rgba(16,20,19,.78);
+  --ink:#f3efe4;
+  --ink-soft:rgba(243,239,228,.66);
+  --line:rgba(243,239,228,.14);
+  --bg:#101614;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
+  font-family:"Karla",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;
+  touch-action:none;user-select:none;-webkit-user-select:none}
+canvas#scene{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+
+.top{position:fixed;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;
+  padding:calc(env(safe-area-inset-top,0px) + 14px) 14px 28px;pointer-events:none;gap:10px;
+  background:linear-gradient(rgba(0,0,0,.32),rgba(0,0,0,0))}
+.title{pointer-events:auto}
+.title h1{margin:0;font-family:"Fraunces",Georgia,"Times New Roman",serif;font-weight:700;
+  font-size:clamp(26px,6vw,38px);letter-spacing:-.01em;line-height:1;
+  text-shadow:0 2px 18px rgba(0,0,0,.45)}
+.title p{margin:6px 0 0;font-size:15px;color:var(--ink-soft);text-shadow:0 1px 10px rgba(0,0,0,.5)}
+.icons{display:flex;gap:8px;pointer-events:auto;flex-wrap:wrap;justify-content:flex-end}
+.title{min-width:0}
+.iconbtn.walk{background:var(--ember);color:#2a1a06;border-color:transparent}
+.iconbtn.walk[aria-pressed="true"]{background:var(--glass);color:var(--ink);border-color:var(--line)}
+@media (max-width:420px){#soundLbl{display:none}}
+.joy{position:fixed;left:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 150px);width:124px;height:124px;border-radius:50%;
+  background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:none;touch-action:none}
+.joyKnob{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:var(--ink);opacity:.85;pointer-events:none}
+@media (pointer:coarse){body.fp .joy{display:block}}
+.iconbtn{white-space:nowrap;appearance:none;border:1px solid var(--line);background:var(--glass);color:var(--ink);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  height:42px;min-width:42px;padding:0 12px;border-radius:21px;font:600 14px/1 "Karla",system-ui,sans-serif;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer}
+.iconbtn[aria-pressed="true"]{border-color:var(--ember);color:#fff}
+.iconbtn svg{width:18px;height:18px}
+
+.panel{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(560px,100%);
+  padding:0 10px calc(env(safe-area-inset-bottom,0px) + 10px)}
+.card{background:var(--glass);border:1px solid var(--line);border-radius:22px;
+  backdrop-filter:blur(16px) saturate(1.2);-webkit-backdrop-filter:blur(16px) saturate(1.2);
+  padding:12px 12px 10px}
+.timeRow{display:flex;align-items:center;gap:10px}
+.play{flex:none;width:40px;height:40px;border-radius:50%;border:none;background:var(--ember);color:#2a1a06;
+  display:grid;place-items:center;cursor:pointer}
+.play svg{width:16px;height:16px}
+.clock{flex:none;font-family:"Fraunces",Georgia,serif;font-weight:500;font-size:20px;
+  font-variant-numeric:tabular-nums;min-width:56px;text-align:right}
+
+/* the day-arc slider: its track is the sky over 24 hours */
+.day{flex:1;position:relative;height:40px}
+.day input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.track{position:absolute;left:0;right:0;top:50%;height:12px;transform:translateY(-50%);border-radius:6px;
+  background:linear-gradient(90deg,#0d1430 0%,#1b2650 18%,#e97b4a 25%,#f4c28c 29%,#8cc0ea 38%,#5f9de0 50%,#8cc0ea 62%,#f4b37a 71%,#e0694a 75%,#2a2f5c 82%,#0d1430 100%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.knob{position:absolute;top:50%;width:26px;height:26px;margin-left:-13px;transform:translateY(-50%);
+  border-radius:50%;background:#fff3d6;box-shadow:0 0 0 3px rgba(0,0,0,.25),0 0 18px rgba(255,214,140,.9);pointer-events:none}
+.knob.moon{background:#dfe6ff;box-shadow:0 0 0 3px rgba(0,0,0,.3),0 0 14px rgba(170,190,255,.7)}
+.day input:focus-visible ~ .knob{outline:2px solid #fff;outline-offset:3px}
+
+.weather{display:flex;gap:6px;margin-top:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.weather::-webkit-scrollbar{display:none}
+.chip{flex:none;appearance:none;border:1px solid var(--line);background:transparent;color:var(--ink);
+  border-radius:16px;padding:8px 12px;font:600 14px/1 "Karla",system-ui,sans-serif;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px}
+.chip[aria-pressed="true"]{background:var(--ink);color:#1c241f;border-color:var(--ink)}
+.chip span{font-size:15px}
+button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
+
+.hint{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 140px);
+  background:var(--glass-strong);padding:8px 14px;border-radius:14px;font-size:14px;color:var(--ink);
+  transition:opacity .8s;pointer-events:none;width:max-content;max-width:calc(100% - 32px);text-align:center}
+.hint.gone{opacity:0}
+.loader{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg);z-index:5;transition:opacity 1.2s}
+.loader p{font-family:"Fraunces",Georgia,serif;font-size:22px;color:var(--ink-soft)}
+.loader.gone{opacity:0;pointer-events:none}
+@media (prefers-reduced-motion: reduce){.hint,.loader{transition:none}}
