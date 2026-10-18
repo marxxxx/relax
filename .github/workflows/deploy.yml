@@ -25,10 +25,10 @@ jobs:
 
       - uses: actions/configure-pages@v5
 
-      # Publishes the whole repo; upload-pages-artifact excludes .git and .github
+      # Only the web/ folder is published
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: web
 
       - id: deployment
         uses: actions/deploy-pages@v4
