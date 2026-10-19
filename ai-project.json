@@ -1,0 +1,14 @@
+{
+  "project": {
+    "name": "relax"
+  },
+  "repository": {
+    "slug": "marxxxx/relax"
+  },
+  "ticketing": {
+    "backend": "github"
+  },
+  "git": {
+    "prTarget": "main"
+  }
+}

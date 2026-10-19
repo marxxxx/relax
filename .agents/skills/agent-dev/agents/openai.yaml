@@ -1,0 +1,5 @@
+# DO NOT EDIT — generated from agent-src/skills/agent-dev; run `node agent-src/generate.mjs`
+interface:
+  display_name: "relax Agent Dev"
+  short_description: "Ticket to PR with the superpowers workflow"
+  default_prompt: "Use $agent-dev to implement this relax change (optionally: ticket <id>)."
