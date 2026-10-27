@@ -44,6 +44,8 @@ function gable(x0,d){const s=new THREE.Shape();s.moveTo(-HZ,UH);s.lineTo(HZ,UH);
   const g=logUV(new THREE.ExtrudeGeometry(s,{depth:d,bevelEnabled:false}));g.rotateY(Math.PI/2);g.translate(x0,0,0);return add(g,wallMat,0,0,0);}
 gable(-HX,T_);gable(IX,T_);gable(-1.46,.12);gable(2.24,.12);
 
+// warm night glow for windows and the skylight (only visible from outside; from inside you look out)
+export const glowMat=new THREE.MeshBasicMaterial({color:0xffb15c,transparent:true,opacity:0,depthWrite:false,side:THREE.FrontSide});
 // ---------- roof: two slopes, vaulted plank ceiling underneath, skylight over the bathroom tub ----------
 const roofMat=weatherize(std(0x4a3b33,{flatShading:true}),'roof'),ceilMat=std(0x8a6440);
 const ang=Math.atan2(RIDGE-UH,HZ),SL=Math.hypot(HZ,RIDGE-UH)+.75,RW=HX*2+.9;
@@ -59,6 +61,7 @@ const front=slope(1);slope(-1);
 add(new THREE.BoxGeometry(RW,.14,.5),roofMat,0,RIDGE+.25,0);
 {const w=SKU[1]-SKU[0],l=SKS[1]-SKS[0],u=(SKU[0]+SKU[1])/2,s=(SKS[0]+SKS[1])/2,fm=std(0x3a2616);
   const pane=add(new THREE.BoxGeometry(w,.03,l),std(0x9fc4d8,{transparent:true,opacity:.35,roughness:.1,metalness:.1}),u,.14,s,front);pane.castShadow=false;
+  const glow=new THREE.Mesh(new THREE.PlaneGeometry(w,l).rotateX(-Math.PI/2),glowMat);glow.position.set(u,.17,s);front.add(glow);
   [[w+.12,.08,u,SKS[0]],[w+.12,.08,u,SKS[1]]].forEach(f=>add(new THREE.BoxGeometry(f[0],.3,f[1]),fm,f[2],.12,f[3],front));
   [SKU[0],SKU[1]].forEach(x=>add(new THREE.BoxGeometry(.08,.3,l),fm,x,.12,s,front));}
 // tie beams under the vault
@@ -88,7 +91,6 @@ BOXES.push([-.75,-.45,HZ,HZ+1.2]);
 
 // window frames + warm glow panes (only visible from outside; from inside you look out)
 const frameMat=std(0x3a2616);
-export const glowMat=new THREE.MeshBasicMaterial({color:0xffb15c,transparent:true,opacity:0,depthWrite:false,side:THREE.FrontSide});
 export function windowAt(x,z,rotY,w,h,yc){
   const g=new THREE.Group();g.position.set(x,yc,z);g.rotation.y=rotY;cabin.add(g);
   add(new THREE.BoxGeometry(w+.16,.1,.32),frameMat,0,-h/2,0,g);add(new THREE.BoxGeometry(w+.16,.1,.32),frameMat,0,h/2,0,g);

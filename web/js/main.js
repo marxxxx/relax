@@ -8,6 +8,7 @@ import './lights.js';
 import './terrain.js';
 import './cabin.js';
 import './interior.js';
+import './upstairs.js';
 import './campfire.js';
 import {updateEffects} from './effects.js';
 import './trees.js';
