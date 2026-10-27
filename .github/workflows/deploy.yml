@@ -22,19 +22,17 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # all branches, for staging/<branch>/
 
-      # Only the web/ folder is published. Local .css/.js references in HTML
+      # main's web/ is published at the root, every other branch's web/ under
+      # staging/<branch>/ (see build-site.sh). Local .css/.js references in HTML
       # and relative ES module imports in JS get ?v=<commit> appended so each
       # deploy busts browser caches for them.
       - name: Prepare site
         run: |
-          cp -r web _site
-          version="${GITHUB_SHA::7}"
-          find _site -name '*.html' -exec sed -i -E \
-            "s#((href|src)=\"[^\":?]+\.(css|js))\"#\1?v=${version}\"#g" {} +
-          find _site -name '*.js' -exec sed -i -E \
-            "s#((from|import) '\.\.?/[^'?]+\.js)'#\1?v=${version}'#g" {} +
-          grep -rhoE '(href|src)="[^"]+\?v=[^"]+"' _site --include='*.html'
+          bash .github/scripts/build-site.sh _site
+          grep -rhoE '(href|src)="[^"]+\?v=[^"]+"' _site --include='*.html' | sort | uniq -c
           grep -rhoE "'\.\.?/[^']+\?v=[^']+'" _site --include='*.js' | sort | uniq -c
 
       - uses: actions/configure-pages@v5

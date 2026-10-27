@@ -1,0 +1,21 @@
+name: Stage branch
+
+# Pages only deploys from main, so pushes to (and deletions of) other branches
+# re-run the main deploy, which rebuilds staging/<branch>/ for every branch.
+on:
+  push:
+    branches-ignore: [main]
+  delete:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Redeploy Pages from main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --ref main --repo ${{ github.repository }}
