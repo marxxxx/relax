@@ -57,10 +57,11 @@ export function updateCamera(dt){
     const sp=(keys.ShiftLeft||keys.ShiftRight||Math.hypot(joyX,joyY)>.95?4.6:2.4)*dt;
     const sy_=Math.sin(player.yaw),cy=Math.cos(player.yaw);
     const mx=(-sy_*f+cy*r)*sp,mz=(-cy*f-sy_*r)*sp;
-    if(!blocked(player.x+mx,player.z)&&!tooSteep(player.x,player.z,player.x+mx,player.z))player.x+=mx;
-    if(!blocked(player.x,player.z+mz)&&!tooSteep(player.x,player.z,player.x,player.z+mz))player.z+=mz;
+    const py=player.y;
+    if(!blocked(player.x+mx,player.z,py)&&!tooSteep(player.x,player.z,player.x+mx,player.z,py))player.x+=mx;
+    if(!blocked(player.x,player.z+mz,py)&&!tooSteep(player.x,player.z,player.x,player.z+mz,py))player.z+=mz;
     const moving=Math.hypot(mx,mz)>1e-4;if(moving)player.bob+=Math.hypot(mx,mz)*3.2;
-    const fy=floorAt(player.x,player.z);player.y+=(fy-player.y)*Math.min(1,dt*12);
+    const fy=floorAt(player.x,player.z,player.y);player.y+=(fy-player.y)*Math.min(1,dt*12);
     camera.rotation.order='YXZ';camera.rotation.set(player.pitch,player.yaw,0);
     camera.position.set(player.x,player.y+1.62+Math.sin(player.bob)*.03*(moving?1:0),player.z);
     target.set(player.x,player.y+1.6,player.z);
