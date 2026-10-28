@@ -19,7 +19,7 @@ for(let i=0;i<tp.count;i++){
   c.lerp(MEAD,(1-smooth(10,30,r))*.7);
   const path=Math.min(distSeg(x,z,0,3.6,FIRE.x,FIRE.z),Math.hypot(x-FIRE.x,z-FIRE.z)-1.2);
   c.lerp(DIRT,(1-smooth(.6,1.6,path))*.85);
-  c.lerp(DIRT,(1-smooth(3.5,5.5,Math.hypot(x/1.2,z-0.5)))*.6);
+  c.lerp(DIRT,(1-smooth(4.5,7,Math.hypot(x/1.2,z-0.5)))*.6);
   c.lerp(ROCK,smooth(.82,.62,ny)*smooth(5,12,y));
   const steep=smooth(.72,.5,ny);
   c.lerp(c2.copy(ROCK).multiplyScalar(.75+.5*fbm(x*.15+y*.4,z*.15)).lerp(CLIFF2,smooth(.4,.7,fbm(y*.35,x*.05+z*.05))*.5),steep*.92);

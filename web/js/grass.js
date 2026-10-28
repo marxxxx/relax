@@ -26,7 +26,7 @@ const GRASS=isMobile?14000:26000;
 const grass=new THREE.InstancedMesh(blade,grassMat,GRASS);
 let gi=0;
 while(gi<GRASS){const a=rnd()*6.28,r=Math.sqrt(rnd())*38,x=Math.cos(a)*r,z=Math.sin(a)*r;
-  if(Math.abs(x)<4.6&&z>-3.9&&z<4.8)continue;
+  if(Math.abs(x)<5.6&&z>-4&&z<5.6)continue;
   if(Math.hypot(x-FIRE.x,z-FIRE.z)<1.6)continue;
   if(distSeg(x,z,0,3.6,FIRE.x,FIRE.z)<.9||pathDist(x,z)<.9)continue;
   if(Math.hypot(x-LAKE.x,z-LAKE.z)<LAKE.r*1.1)continue;

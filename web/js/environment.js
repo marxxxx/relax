@@ -7,6 +7,7 @@ import {hemi,sun} from './lights.js';
 import {water} from './terrain.js';
 import {glowMat,winLight} from './cabin.js';
 import {hearthLight,bounceLight,lanternLight,updateBeams} from './interior.js';
+import {candleLight} from './upstairs.js';
 import {fireLight} from './campfire.js';
 import {target} from './controls.js';
 import {PP} from './post.js';
@@ -85,6 +86,7 @@ export function updateEnvironment(dt){
 
   hearthLight.intensity=(.9+night*.4)*(.8+.2*Math.sin(state.T*11+2)*Math.sin(state.T*6.1)+.06*Math.random());
   lanternLight.intensity=.25+glow*.6;
+  candleLight.intensity=(.35+glow*.5)*(.85+.15*Math.sin(state.T*13)*Math.sin(state.T*7.3));
   const sunIn=day*(1-cl*.9);
   bounceLight.intensity=hearthLight.intensity*.22+sunIn*.45;
   updateBeams(sunDir,.32*sunIn*(1+cur.fog*.5),c.copy(sunCol));

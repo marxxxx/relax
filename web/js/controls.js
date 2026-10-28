@@ -6,7 +6,7 @@ import {blocked,tooSteep,floorAt,isInside} from './collision.js';
 import {state} from './state.js';
 
 // ---------- camera control ----------
-export const target=new THREE.Vector3(2,3.6,2.5);
+export const target=new THREE.Vector3(2,4.6,2.5);
 let az=.95,pol=1.5,dist=25,tAz=az,tPol=pol,tDist=dist,idle=0;
 const pointers=new Map();let pinch0=0,dist0=0;
 export const player={x:0,z:8.5,y:0,yaw:0,pitch:-.05,bob:0};
@@ -18,8 +18,8 @@ canvas.addEventListener('pointermove',e=>{const p=pointers.get(e.pointerId);if(!
   if(state.mode==='fp'){const k=e.pointerType==='touch'?.0065:.0042;player.yaw-=dx*k;player.pitch=clamp(player.pitch-dy*k,-1.35,1.35);}
   else if(pointers.size===1){tAz-=dx*.006;tPol=clamp(tPol-dy*.005,.35,1.5);}
   p.x=e.clientX;p.y=e.clientY;
-  if(state.mode==='orbit'&&pointers.size===2){const [a,b]=[...pointers.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);if(pinch0>0)tDist=clamp(dist0*pinch0/d,7,80);}});
-canvas.addEventListener('wheel',e=>{e.preventDefault();if(state.mode==='fp')return;idle=0;hideHint();tDist=clamp(tDist*(1+Math.sign(e.deltaY)*.1),7,80);},{passive:false});
+  if(state.mode==='orbit'&&pointers.size===2){const [a,b]=[...pointers.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);if(pinch0>0)tDist=clamp(dist0*pinch0/d,9,80);}});
+canvas.addEventListener('wheel',e=>{e.preventDefault();if(state.mode==='fp')return;idle=0;hideHint();tDist=clamp(tDist*(1+Math.sign(e.deltaY)*.1),9,80);},{passive:false});
 
 addEventListener('keydown',e=>{if(e.target&&e.target.type==='range')return;keys[e.code]=true;
   if(state.mode==='fp'&&/^(Arrow|Space)/.test(e.code))e.preventDefault();});
@@ -42,7 +42,7 @@ export function setMode(m){
   $('modeBtn').setAttribute('aria-pressed',m==='fp');
   if(m==='fp'){player.x=0;player.z=8.5;player.yaw=0;player.pitch=-.05;player.y=floorAt(0,8.5);camera.near=.05;
     const h=$('hint');h.textContent=touchUI?'Links mit dem Joystick gehen, rechts ziehen zum Umsehen':'W A S D zum Gehen, Shift zum Laufen, Ziehen zum Umsehen';h.classList.remove('gone');setTimeout(hideHint,7000);}
-  else{camera.near=.1;target.set(2,3.6,2.5);}
+  else{camera.near=.1;target.set(2,4.6,2.5);}
   camera.updateProjectionMatrix();}
 $('modeBtn').addEventListener('click',()=>setMode(state.mode==='fp'?'orbit':'fp'));
 
@@ -57,10 +57,11 @@ export function updateCamera(dt){
     const sp=(keys.ShiftLeft||keys.ShiftRight||Math.hypot(joyX,joyY)>.95?4.6:2.4)*dt;
     const sy_=Math.sin(player.yaw),cy=Math.cos(player.yaw);
     const mx=(-sy_*f+cy*r)*sp,mz=(-cy*f-sy_*r)*sp;
-    if(!blocked(player.x+mx,player.z)&&!tooSteep(player.x,player.z,player.x+mx,player.z))player.x+=mx;
-    if(!blocked(player.x,player.z+mz)&&!tooSteep(player.x,player.z,player.x,player.z+mz))player.z+=mz;
+    const py=player.y;
+    if(!blocked(player.x+mx,player.z,py)&&!tooSteep(player.x,player.z,player.x+mx,player.z,py))player.x+=mx;
+    if(!blocked(player.x,player.z+mz,py)&&!tooSteep(player.x,player.z,player.x,player.z+mz,py))player.z+=mz;
     const moving=Math.hypot(mx,mz)>1e-4;if(moving)player.bob+=Math.hypot(mx,mz)*3.2;
-    const fy=floorAt(player.x,player.z);player.y+=(fy-player.y)*Math.min(1,dt*12);
+    const fy=floorAt(player.x,player.z,player.y);player.y+=(fy-player.y)*Math.min(1,dt*12);
     camera.rotation.order='YXZ';camera.rotation.set(player.pitch,player.yaw,0);
     camera.position.set(player.x,player.y+1.62+Math.sin(player.bob)*.03*(moving?1:0),player.z);
     target.set(player.x,player.y+1.6,player.z);
