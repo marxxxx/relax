@@ -75,7 +75,7 @@ function rail(x0,z0,x1,z1,y0,y1,posts=3){const L=Math.hypot(x1-x0,z1-z0),r=add(n
   for(let i=0;i<=posts;i++){const t=i/posts;add(new THREE.BoxGeometry(.06,1,.06),railMat,x0+(x1-x0)*t,y0+(y1-y0)*t+.5,z0+(z1-z0)*t);}}
 rail(STAIR.x0+.15,STAIR.z1,STAIR.x1,STAIR.z1,stairH(STAIR.x0+.15),UF,6);
 rail(STAIR.hx,STAIR.z1,1.2,STAIR.z1,UF,UF,3);
-BOXES.push([STAIR.hx,1.2,STAIR.z1-.05,STAIR.z1+.05,WH,4.5],[STAIR.hx-.05,STAIR.hx+.05,STAIR.z0,STAIR.z1,WH,4.5]);
+BOXES.push([STAIR.hx,1.2,STAIR.z1-.05,STAIR.z1+.05,UF+.2,4.5],[STAIR.hx-.05,STAIR.hx+.05,STAIR.z0,STAIR.z1,UF+.2,4.5]); // upper floor only: the stair passes under them
 
 // ---------- balcony on the west gable, facing the sea ----------
 add(new THREE.BoxGeometry(BALC.x1-BALC.x0,.15,BALC.hz*2),std(0x6a4a2e),(BALC.x0+BALC.x1)/2,UF-.075,0);
