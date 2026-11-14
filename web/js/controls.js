@@ -1,29 +1,39 @@
 // Camera control: orbit view (drag / pinch / wheel) and first-person walking (keys / joystick).
 import {$,clamp} from './util.js';
 import {canvas,camera} from './renderer.js';
-import {heightAt} from './world.js';
+import {heightAt,SEA} from './world.js';
 import {blocked,tooSteep,floorAt,isInside} from './collision.js';
 import {state} from './state.js';
 
 // ---------- camera control ----------
 export const target=new THREE.Vector3(2,4.6,2.5);
-let az=.95,pol=1.5,dist=25,tAz=az,tPol=pol,tDist=dist,idle=0;
+const HOME=target.clone(),HOFF=HOME.y-heightAt(HOME.x,HOME.z),tTgt=HOME.clone(),PANR=200;
+let az=.95,pol=1.5,dist=25,tAz=az,tPol=pol,tDist=dist,idle=0,lastTap=0;
 const pointers=new Map();let pinch0=0,dist0=0;
 export const player={x:0,z:8.5,y:0,yaw:0,pitch:-.05,bob:0};
 const keys={};let joyX=0,joyY=0;
-canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});idle=0;hideHint();
-  if(pointers.size===2){const [a,b]=[...pointers.values()];pinch0=Math.hypot(a.x-b.x,a.y-b.y);dist0=tDist;}});
+// screen drag (px) -> move the orbit target across the ground, map style
+function pan(dx,dy){const k=tDist*1.04/innerHeight,s=Math.sin(az),c=Math.cos(az);
+  tTgt.x-=(c*dx+s*dy)*k;tTgt.z-=(-s*dx+c*dy)*k;
+  const r=Math.hypot(tTgt.x,tTgt.z);if(r>PANR){tTgt.x*=PANR/r;tTgt.z*=PANR/r;}}
+function goHome(){tTgt.copy(HOME);}
+const mid=()=>{let x=0,y=0;for(const p of pointers.values()){x+=p.x;y+=p.y;}return {x:x/pointers.size,y:y/pointers.size};};
+const pinchStart=()=>{const [a,b]=[...pointers.values()];pinch0=Math.hypot(a.x-b.x,a.y-b.y);dist0=tDist;};
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);idle=0;hideHint();
+  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pointers.size===2)pinchStart();
+  if(pointers.size===1&&state.mode==='orbit'&&e.pointerType==='touch'){const t=performance.now();if(t-lastTap<300)goHome();lastTap=t;}});
 canvas.addEventListener('pointermove',e=>{const p=pointers.get(e.pointerId);if(!p)return;idle=0;
-  const dx=e.clientX-p.x,dy=e.clientY-p.y;
-  if(state.mode==='fp'){const k=e.pointerType==='touch'?.0065:.0042;player.yaw-=dx*k;player.pitch=clamp(player.pitch-dy*k,-1.35,1.35);}
-  else if(pointers.size===1){tAz-=dx*.006;tPol=clamp(tPol-dy*.005,.35,1.5);}
-  else if(pointers.size===2){tAz-=dx*.003;tPol=clamp(tPol-dy*.0025,.35,1.5);} // two-finger swipe: midpoint moves half as far
-  p.x=e.clientX;p.y=e.clientY;
-  if(state.mode==='orbit'&&pointers.size===2){const [a,b]=[...pointers.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);if(pinch0>0)tDist=clamp(dist0*pinch0/d,9,80);}});
-const ptrEnd=e=>{if(!pointers.delete(e.pointerId))return;pinch0=0;
-  if(pointers.size===2){const [a,b]=[...pointers.values()];pinch0=Math.hypot(a.x-b.x,a.y-b.y);dist0=tDist;}};
+  const dx=e.clientX-p.x,dy=e.clientY-p.y;if(dx||dy)lastTap=0;
+  if(state.mode==='fp'){const k=e.pointerType==='touch'?.0065:.0042;player.yaw-=dx*k;player.pitch=clamp(player.pitch-dy*k,-1.35,1.35);p.x=e.clientX;p.y=e.clientY;return;}
+  if(pointers.size===1){if(e.buttons&2||e.shiftKey)pan(dx,dy);else{tAz-=dx*.006;tPol=clamp(tPol-dy*.005,.08,1.5);}p.x=e.clientX;p.y=e.clientY;return;}
+  if(pointers.size===2){const m0=mid();p.x=e.clientX;p.y=e.clientY;const m1=mid();pan(m1.x-m0.x,m1.y-m0.y);
+    const [a,b]=[...pointers.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);if(pinch0>0)tDist=clamp(dist0*pinch0/d,9,220);}});
+const ptrEnd=e=>{if(!pointers.delete(e.pointerId))return;pinch0=0;if(pointers.size===2)pinchStart();};
 for(const t of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(t,ptrEnd);
-canvas.addEventListener('wheel',e=>{e.preventDefault();if(state.mode==='fp')return;idle=0;hideHint();tDist=clamp(tDist*(1+Math.sign(e.deltaY)*.1),9,80);},{passive:false});
+canvas.addEventListener('dblclick',()=>{if(state.mode==='orbit')goHome();});
+canvas.addEventListener('wheel',e=>{e.preventDefault();if(state.mode==='fp')return;idle=0;hideHint();tDist=clamp(tDist*(1+Math.sign(e.deltaY)*.1),9,220);},{passive:false});
 
 addEventListener('keydown',e=>{if(e.target&&e.target.type==='range')return;keys[e.code]=true;
   if(state.mode==='fp'&&/^(Arrow|Space)/.test(e.code))e.preventDefault();});
@@ -46,7 +56,7 @@ export function setMode(m){
   $('modeBtn').setAttribute('aria-pressed',m==='fp');
   if(m==='fp'){player.x=0;player.z=8.5;player.yaw=0;player.pitch=-.05;player.y=floorAt(0,8.5);camera.near=.05;
     const h=$('hint');h.textContent=touchUI?'Links mit dem Joystick gehen, rechts ziehen zum Umsehen':'W A S D zum Gehen, Shift zum Laufen, Ziehen zum Umsehen';h.classList.remove('gone');setTimeout(hideHint,7000);}
-  else{camera.near=.1;target.set(2,4.6,2.5);}
+  else{camera.near=.1;target.copy(HOME);tTgt.copy(HOME);}
   camera.updateProjectionMatrix();}
 $('modeBtn').addEventListener('click',()=>setMode(state.mode==='fp'?'orbit':'fp'));
 
@@ -71,9 +81,10 @@ export function updateCamera(dt){
     target.set(player.x,player.y+1.6,player.z);
   }else{
   idle+=dt;if(idle>12)tAz+=dt*.025;
+  tTgt.y=Math.max(heightAt(tTgt.x,tTgt.z),SEA)+HOFF;target.lerp(tTgt,Math.min(1,dt*6));
   az+=(tAz-az)*Math.min(1,dt*6);pol+=(tPol-pol)*Math.min(1,dt*6);dist+=(tDist-dist)*Math.min(1,dt*5);
   camera.position.set(target.x+dist*Math.sin(pol)*Math.sin(az),target.y+dist*Math.cos(pol),target.z+dist*Math.sin(pol)*Math.cos(az));
-  const gh=heightAt(camera.position.x,camera.position.z)+1.2;if(camera.position.y<gh)camera.position.y=gh;
+  const gh=Math.max(heightAt(camera.position.x,camera.position.z),SEA)+1.2;if(camera.position.y<gh)camera.position.y=gh;
   camera.lookAt(target);
   }
   state.indoor+=((state.mode==='fp'&&isInside(player.x,player.z)?1:0)-state.indoor)*Math.min(1,dt*2.5);
