@@ -17,8 +17,12 @@ canvas.addEventListener('pointermove',e=>{const p=pointers.get(e.pointerId);if(!
   const dx=e.clientX-p.x,dy=e.clientY-p.y;
   if(state.mode==='fp'){const k=e.pointerType==='touch'?.0065:.0042;player.yaw-=dx*k;player.pitch=clamp(player.pitch-dy*k,-1.35,1.35);}
   else if(pointers.size===1){tAz-=dx*.006;tPol=clamp(tPol-dy*.005,.35,1.5);}
+  else if(pointers.size===2){tAz-=dx*.003;tPol=clamp(tPol-dy*.0025,.35,1.5);} // two-finger swipe: midpoint moves half as far
   p.x=e.clientX;p.y=e.clientY;
   if(state.mode==='orbit'&&pointers.size===2){const [a,b]=[...pointers.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);if(pinch0>0)tDist=clamp(dist0*pinch0/d,9,80);}});
+const ptrEnd=e=>{if(!pointers.delete(e.pointerId))return;pinch0=0;
+  if(pointers.size===2){const [a,b]=[...pointers.values()];pinch0=Math.hypot(a.x-b.x,a.y-b.y);dist0=tDist;}};
+for(const t of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(t,ptrEnd);
 canvas.addEventListener('wheel',e=>{e.preventDefault();if(state.mode==='fp')return;idle=0;hideHint();tDist=clamp(tDist*(1+Math.sign(e.deltaY)*.1),9,80);},{passive:false});
 
 addEventListener('keydown',e=>{if(e.target&&e.target.type==='range')return;keys[e.code]=true;
