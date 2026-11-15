@@ -97,6 +97,13 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 .animalRow input{flex:1;min-width:0;accent-color:var(--ember);cursor:pointer}
 .animalRow .val{flex:none;min-width:30px;text-align:right;font:600 14px/1 "Karla",system-ui,sans-serif;
   font-variant-numeric:tabular-nums;color:var(--ink-soft)}
+.animalBtns{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.abtn{flex:1;appearance:none;border:1px solid var(--line);background:transparent;color:var(--ink);
+  border-radius:14px;padding:7px 4px;font:600 13px/1 "Karla",system-ui,sans-serif;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}
+.abtn span{font-size:15px}
+.abtn[aria-pressed="true"]{background:var(--ink);color:#1c241f;border-color:var(--ink)}
+.abtn:disabled{opacity:.35;cursor:default}
 input[type=range]:focus-visible{outline:2px solid var(--ember);outline-offset:2px;border-radius:6px}
 
 .hint{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 140px);

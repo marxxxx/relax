@@ -46,5 +46,5 @@ function frame(now){
   if(firstFrame){firstFrame=false;setTimeout(()=>$('loader').classList.add('gone'),150);}
   requestAnimationFrame(frame);
 }
-window.__lichtung={player,setMode,animals,state};
+window.__lichtung={player,setMode,animals,state,camera};
 requestAnimationFrame(frame);
