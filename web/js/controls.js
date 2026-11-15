@@ -36,8 +36,8 @@ for(const t of ['pointerup','pointercancel','lostpointercapture'])canvas.addEven
 canvas.addEventListener('dblclick',()=>{if(state.mode==='orbit')goHome();});
 canvas.addEventListener('wheel',e=>{e.preventDefault();if(state.mode==='fp')return;idle=0;hideHint();tDist=clamp(tDist*(1+Math.sign(e.deltaY)*.1),9,220);},{passive:false});
 
-addEventListener('keydown',e=>{if(e.target&&e.target.type==='range')return;keys[e.code]=true;
-  if(e.code==='Escape'&&(state.rider||state.mode==='fp'))setMode('orbit');   // detach from the animal (or leave fp) -> orbit, camera stays on the animal via state.watch
+addEventListener('keydown',e=>{if(e.code==='Escape'&&(state.rider||state.mode==='fp'))setMode('orbit');   // detach from the animal (or leave fp) -> orbit, camera stays on the animal via state.watch — also works while a slider has focus
+  if(e.target&&e.target.type==='range')return;keys[e.code]=true;
   if(state.mode==='fp'&&/^(Arrow|Space)/.test(e.code))e.preventDefault();});
 addEventListener('keyup',e=>{keys[e.code]=false;});
 addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
