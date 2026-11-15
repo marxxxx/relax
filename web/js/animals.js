@@ -243,7 +243,7 @@ function syncBtns(){for(const k of KINDS){k.btn.disabled=!vis(k).length;
   k.btn.setAttribute('aria-pressed',!!(state.rider&&state.rider.kind===k.id&&state.rider.g.visible)+'');}}
 function attach(a){if(state.mode!=='fp')setMode('fp');state.rider=a;state.watch=null;
   const kn=KINDS.find(k=>k.id===a.kind),h=$('hint');
-  h.textContent='Du folgst dem '+kn.name+' – Esc für Rundblick';h.classList.remove('gone');
+  h.textContent='Du folgst dem '+kn.name+(isMobile?' – „Rundblick“ oben rechts zum Loslassen':' – Esc für Rundblick');h.classList.remove('gone');
   clearTimeout(attach.t);attach.t=setTimeout(()=>h.classList.add('gone'),5000);syncBtns();}
 function onKind(k){const v=vis(k);if(!v.length)return;
   if(state.rider&&state.rider.kind===k.id){const i=v.indexOf(state.rider);attach(v[(i+1)%v.length]);}  // same kind again -> next animal of this kind
