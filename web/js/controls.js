@@ -11,12 +11,13 @@ const HOME=target.clone(),HOFF=HOME.y-heightAt(HOME.x,HOME.z),tTgt=HOME.clone(),
 let az=.95,pol=1.5,dist=25,tAz=az,tPol=pol,tDist=dist,idle=0,lastTap=0;
 const pointers=new Map();let pinch0=0,dist0=0;
 export const player={x:0,z:8.5,y:0,yaw:0,pitch:-.05,bob:0};
+const camP=new THREE.Vector3();
 const keys={};let joyX=0,joyY=0;
 // screen drag (px) -> move the orbit target across the ground, map style
-function pan(dx,dy){const k=tDist*1.04/innerHeight,s=Math.sin(az),c=Math.cos(az);
+function pan(dx,dy){state.watch=null;const k=tDist*1.04/innerHeight,s=Math.sin(az),c=Math.cos(az);
   tTgt.x-=(c*dx+s*dy)*k;tTgt.z-=(-s*dx+c*dy)*k;
   const r=Math.hypot(tTgt.x,tTgt.z);if(r>PANR){tTgt.x*=PANR/r;tTgt.z*=PANR/r;}}
-function goHome(){tTgt.copy(HOME);}
+function goHome(){state.watch=null;tTgt.copy(HOME);}
 const mid=()=>{let x=0,y=0;for(const p of pointers.values()){x+=p.x;y+=p.y;}return {x:x/pointers.size,y:y/pointers.size};};
 const pinchStart=()=>{const [a,b]=[...pointers.values()];pinch0=Math.hypot(a.x-b.x,a.y-b.y);dist0=tDist;};
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
@@ -26,7 +27,7 @@ canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);
   if(pointers.size===1&&state.mode==='orbit'&&e.pointerType==='touch'){const t=performance.now();if(t-lastTap<300)goHome();lastTap=t;}});
 canvas.addEventListener('pointermove',e=>{const p=pointers.get(e.pointerId);if(!p)return;idle=0;
   const dx=e.clientX-p.x,dy=e.clientY-p.y;if(dx||dy)lastTap=0;
-  if(state.mode==='fp'){const k=e.pointerType==='touch'?.0065:.0042;player.yaw-=dx*k;player.pitch=clamp(player.pitch-dy*k,-1.35,1.35);p.x=e.clientX;p.y=e.clientY;return;}
+  if(state.mode==='fp'){if(!state.rider){const k=e.pointerType==='touch'?.0065:.0042;player.yaw-=dx*k;player.pitch=clamp(player.pitch-dy*k,-1.35,1.35);}p.x=e.clientX;p.y=e.clientY;return;}
   if(pointers.size===1){if(e.buttons&2||e.shiftKey)pan(dx,dy);else{tAz-=dx*.006;tPol=clamp(tPol-dy*.005,.08,1.5);}p.x=e.clientX;p.y=e.clientY;return;}
   if(pointers.size===2){const m0=mid();p.x=e.clientX;p.y=e.clientY;const m1=mid();pan(m1.x-m0.x,m1.y-m0.y);
     const [a,b]=[...pointers.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);if(pinch0>0)tDist=clamp(dist0*pinch0/d,9,220);}});
@@ -35,7 +36,8 @@ for(const t of ['pointerup','pointercancel','lostpointercapture'])canvas.addEven
 canvas.addEventListener('dblclick',()=>{if(state.mode==='orbit')goHome();});
 canvas.addEventListener('wheel',e=>{e.preventDefault();if(state.mode==='fp')return;idle=0;hideHint();tDist=clamp(tDist*(1+Math.sign(e.deltaY)*.1),9,220);},{passive:false});
 
-addEventListener('keydown',e=>{if(e.target&&e.target.type==='range')return;keys[e.code]=true;
+addEventListener('keydown',e=>{if(e.code==='Escape'&&(state.rider||state.mode==='fp'))setMode('orbit');   // detach from the animal (or leave fp) -> orbit, camera stays on the animal via state.watch — also works while a slider has focus
+  if(e.target&&e.target.type==='range')return;keys[e.code]=true;
   if(state.mode==='fp'&&/^(Arrow|Space)/.test(e.code))e.preventDefault();});
 addEventListener('keyup',e=>{keys[e.code]=false;});
 addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
@@ -54,9 +56,12 @@ export function setMode(m){
   state.mode=m;document.body.classList.toggle('fp',m==='fp');
   $('modeBtn').textContent=m==='fp'?'Rundblick':'Hineingehen';
   $('modeBtn').setAttribute('aria-pressed',m==='fp');
-  if(m==='fp'){player.x=0;player.z=8.5;player.yaw=0;player.pitch=-.05;player.y=floorAt(0,8.5);camera.near=.05;
+  if(m==='fp'){state.rider=null;state.watch=null;player.x=0;player.z=8.5;player.yaw=0;player.pitch=-.05;player.y=floorAt(0,8.5);camera.near=.05;
     const h=$('hint');h.textContent=touchUI?'Links mit dem Joystick gehen, rechts ziehen zum Umsehen':'W A S D zum Gehen, Shift zum Laufen, Ziehen zum Umsehen';h.classList.remove('gone');setTimeout(hideHint,7000);}
-  else{camera.near=.1;target.copy(HOME);tTgt.copy(HOME);}
+  else{camera.near=.1;
+    if(state.rider){state.watch=state.rider;state.rider=null;const p=state.watch.g.position;   // leave ride view: orbit keeps watching the animal
+      tTgt.set(p.x,state.watch.x!==undefined?p.y+.8:p.y,p.z);tDist=clamp(tDist,9,16);}
+    else if(!state.watch){target.copy(HOME);tTgt.copy(HOME);}}
   camera.updateProjectionMatrix();}
 $('modeBtn').addEventListener('click',()=>setMode(state.mode==='fp'?'orbit':'fp'));
 
@@ -66,6 +71,16 @@ setTimeout(hideHint,7000);
 export function updateCamera(dt){
   const g=Math.max(0,cur.wind-1)*1.6; // sturm gusts shake the camera
   if(state.mode==='fp'){
+    if(state.rider){   // ride view: camera glued to the animal's head, no control
+      const r=state.rider,an=r.anchor||r.g;
+      an.updateWorldMatrix(true,false);
+      camP.set(r.eyeOff.x,r.eyeOff.y,r.eyeOff.z).applyMatrix4(an.matrixWorld);
+      camera.rotation.order='YXZ';
+      camera.rotation.set(clamp(-(an.rotation.x||0)-.03,-1.3,1.3),r.g.rotation.y+Math.PI,0);
+      camera.position.copy(camP);target.copy(camP);
+      if(joy.style.display!=='none')joy.style.display='none';
+    }else{
+    if(joy.style.display!=='')joy.style.display='';
     let f=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0)-joyY;
     let r=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0)+joyX;
     const m=Math.hypot(f,r);if(m>1){f/=m;r/=m;}
@@ -82,9 +97,12 @@ export function updateCamera(dt){
     camera.position.x+=Math.sin(state.T*7.1)*g*.035;camera.position.y+=Math.sin(state.T*11.3+1.7)*g*.022;
     camera.rotation.z=Math.sin(state.T*5.9)*g*.014;
     target.set(player.x,player.y+1.6,player.z);
+    }
   }else{
   idle+=dt;if(idle>12)tAz+=dt*.025;
-  tTgt.y=Math.max(heightAt(tTgt.x,tTgt.z),SEA)+HOFF;target.lerp(tTgt,Math.min(1,dt*6));
+  if(state.watch){if(!state.watch.g.visible)state.watch=null;   // orbit may keep watching the last ridden animal
+    else{const p=state.watch.g.position;tTgt.set(p.x,state.watch.x!==undefined?p.y+.8:p.y,p.z);}}
+  if(!state.watch)tTgt.y=Math.max(heightAt(tTgt.x,tTgt.z),SEA)+HOFF;target.lerp(tTgt,Math.min(1,dt*6));
   az+=(tAz-az)*Math.min(1,dt*6);pol+=(tPol-pol)*Math.min(1,dt*6);dist+=(tDist-dist)*Math.min(1,dt*5);
   camera.position.set(target.x+dist*Math.sin(pol)*Math.sin(az),target.y+dist*Math.cos(pol),target.z+dist*Math.sin(pol)*Math.cos(az));
   camera.position.x+=Math.sin(state.T*7.1)*g*.02;camera.position.y+=Math.sin(state.T*11.3+1.7)*g*.013;

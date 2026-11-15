@@ -6,7 +6,7 @@ import {LAKE,SEA,FIRE,coastEdge,heightAt} from './world.js';
 import {scene} from './renderer.js';
 import {std,weatherize} from './materials.js';
 import {state,cur} from './state.js';
-import {player} from './controls.js';
+import {player,setMode} from './controls.js';
 import {particles} from './particles.js';
 import {CHIMNEY_TOP} from './interior.js';
 import {RIDGE} from './house.js';
@@ -48,7 +48,7 @@ function makeFox(){
   const legs=[];
   for(const [x,z] of [[-.07,.15],[-.07,-.15],[.07,.15],[.07,-.15]])
     legs.push(part(new THREE.CylinderGeometry(.022,.026,.26,5).translate(0,-.13,0),g,x,.26,z,mFox));
-  return {g,head,legs,tailG,kind:'fox'};
+  return {g,head,legs,tailG,kind:'fox',anchor:head,eyeOff:new THREE.Vector3(0,.04,.07)};
 }
 function makeDeer(stag){
   const g=new THREE.Group();
@@ -69,7 +69,7 @@ function makeDeer(stag){
   const legs=[];
   for(const [x,z] of [[-.11,.3],[-.11,-.3],[.11,.3],[.11,-.3]])
     legs.push(part(new THREE.CylinderGeometry(.028,.022,.52,5).translate(0,-.26,0),g,x,.56,z,mDeerD));
-  return {g,neck,legs,tailG,kind:'deer'};
+  return {g,neck,legs,tailG,kind:'deer',anchor:neck,eyeOff:new THREE.Vector3(0,.2,.12)};
 }
 function makeDolphin(){
   const g=new THREE.Group();
@@ -80,7 +80,7 @@ function makeDolphin(){
   for(const s of[-1,1]){const f=part(new THREE.ConeGeometry(.05,.22,4),g,s*.17,-.04,.02,mDolph);f.scale.z=.35;f.rotation.z=s*.8;f.rotation.x=.5;}
   const st=part(new THREE.CylinderGeometry(.05,.08,.2,5),g,0,0,-.4,mDolph);st.rotation.x=Math.PI/2;
   part(new THREE.BoxGeometry(.22,.025,.1),g,0,.01,-.52,mDolph);
-  return {g};
+  return {g,kind:'dolphin',anchor:g,eyeOff:new THREE.Vector3(0,.06,.35)};
 }
 
 // ---------- land animals (fox + deer herd) ----------
@@ -132,7 +132,8 @@ function updateLand(dt,env){
 const perch=[...[-3.8,-2.6,-1.4,0,1.4,2.6,3.8].map(x=>[x,RIDGE+.06,0]),[CHIMNEY_TOP.x,CHIMNEY_TOP.y+.06,CHIMNEY_TOP.z]];
 const NB=isMobile?8:12,birds=[];
 for(let i=0;i<NB;i++){const o=Object.assign(makeBird(mBird,mBird,mBeak,1),
-    {cx:(rnd()-.5)*60,cz:-8+(rnd()-.5)*60,cy:9+rnd()*9,r:5+rnd()*11,w:(.2+rnd()*.35)*(rnd()<.5?-1:1),ph:rnd()*6.28,perch:perch[i%perch.length],land:0});
+    {cx:(rnd()-.5)*60,cz:-8+(rnd()-.5)*60,cy:9+rnd()*9,r:5+rnd()*11,w:(.2+rnd()*.35)*(rnd()<.5?-1:1),ph:rnd()*6.28,perch:perch[i%perch.length],land:0,kind:'bird'});
+  o.anchor=o.g;o.eyeOff=new THREE.Vector3(0,.12,.05);
   o.g.position.set(o.cx+Math.cos(o.ph)*o.r,o.cy,o.cz+Math.sin(o.ph)*o.r);scene.add(o.g);birds.push(o);}
 function updateBirds(dt,env){
   const t=state.T,hide=env.night>.55||cur.rain>.55||cur.storm>.4;
@@ -154,7 +155,8 @@ function updateBirds(dt,env){
 // ---------- gulls over the sea ----------
 const NG=isMobile?10:16,gulls=[];
 for(let i=0;i<NG;i++){const z=-130+rnd()*190;
-  const o=Object.assign(makeBird(mGull,mGullW,mBeak,1.7),{cx:coastEdge(z)-30-rnd()*30,cz:z,cy:SEA+7+rnd()*8,r:5+rnd()*9,w:(.22+rnd()*.3)*(rnd()<.5?-1:1),ph:rnd()*6.28});
+  const o=Object.assign(makeBird(mGull,mGullW,mBeak,1.7),{cx:coastEdge(z)-30-rnd()*30,cz:z,cy:SEA+7+rnd()*8,r:5+rnd()*9,w:(.22+rnd()*.3)*(rnd()<.5?-1:1),ph:rnd()*6.28,kind:'gull'});
+  o.anchor=o.g;o.eyeOff=new THREE.Vector3(0,.2,.08);
   o.g.position.set(o.cx+Math.cos(o.ph)*o.r,o.cy,o.cz+Math.sin(o.ph)*o.r);scene.add(o.g);gulls.push(o);}
 function updateGulls(dt){
   const t=state.T;
@@ -214,6 +216,8 @@ export function updateAnimals(dt,env){
   gulls.forEach((g,i)=>g.g.visible=i<nG&&cur.storm<.75);
   dolphins.forEach((d,i)=>d.g.visible=i<nD);
   land.forEach((a,i)=>a.g.visible=i<nL);
+  if(state.rider&&!state.rider.g.visible)state.rider=null;   // ridden animal hidden by the slider -> back to plain fp
+  syncBtns();
   updateBirds(dt,env);updateGulls(dt);updateLand(dt,env);updateDolphins(dt);
   const sp=splash.geometry.attributes.position,sc=splash.geometry.attributes.color;
   for(let i=0;i<SP;i++){const s=spData[i];
@@ -226,5 +230,27 @@ export function updateAnimals(dt,env){
 
 // ---------- UI: "Tiere" slider in the panel (sets state.animalFrac, applied per frame above) ----------
 {const aIn=$('animals'),aVal=$('animalsVal');
-  aIn.addEventListener('input',()=>{state.animalFrac=aIn.value/100;aVal.textContent=animalCount();});
+  aIn.addEventListener('input',()=>{state.animalFrac=aIn.value/100;aVal.textContent=animalCount();syncBtns();});
   aVal.textContent=animalCount();}
+
+// ---------- UI: one first-person button per kind below the "Tiere" slider ----------
+const ALL=[...land,...birds,...gulls,...dolphins];
+const KINDS=[{id:'fox',icon:'🦊',name:'Fuchs'},{id:'deer',icon:'🦌',name:'Reh'},{id:'bird',icon:'🐦',name:'Vogel'},
+  {id:'gull',icon:'🕊️',name:'Möwe'},{id:'dolphin',icon:'🐬',name:'Delfin'}]
+  .map(k=>({...k,arr:ALL.filter(a=>a.kind===k.id)}));
+const vis=k=>k.arr.filter(a=>a.g.visible);
+function syncBtns(){for(const k of KINDS){k.btn.disabled=!vis(k).length;
+  k.btn.setAttribute('aria-pressed',!!(state.rider&&state.rider.kind===k.id&&state.rider.g.visible)+'');}}
+function attach(a){if(state.mode!=='fp')setMode('fp');state.rider=a;state.watch=null;
+  const kn=KINDS.find(k=>k.id===a.kind),h=$('hint');
+  h.textContent='Du folgst dem '+kn.name+(isMobile?' – „Rundblick“ oben rechts zum Loslassen':' – Esc für Rundblick');h.classList.remove('gone');
+  clearTimeout(attach.t);attach.t=setTimeout(()=>h.classList.add('gone'),5000);syncBtns();}
+function onKind(k){const v=vis(k);if(!v.length)return;
+  if(state.rider&&state.rider.kind===k.id){const i=v.indexOf(state.rider);attach(v[(i+1)%v.length]);}  // same kind again -> next animal of this kind
+  else attach(v[0]);}
+{const box=$('animalBtns');
+  for(const k of KINDS){const b=document.createElement('button');b.className='abtn';b.type='button';
+    b.setAttribute('aria-pressed','false');b.setAttribute('aria-label','Erste-Person-Ansicht: '+k.name);
+    b.innerHTML='<span>'+k.icon+'</span>'+k.name;
+    b.addEventListener('click',()=>onKind(k));box.append(b);k.btn=b;}}
+syncBtns();
