@@ -96,7 +96,7 @@ function pickSpot(hx,hz,r){for(let i=0;i<14;i++){const a=rnd()*6.283,d=1+rnd()*r
 const land=[];
 function addLand(a,hx,hz){a.x=hx;a.z=hz;a.y=heightAt(hx,hz);a.tx=null;a.tz=0;a.mode='graze';a.t=1+rnd()*2;a.flee=0;a.moving=false;a.seed=rnd()*6.28;a.home=[hx,hz];a.g.position.set(a.x,a.y,a.z);scene.add(a.g);land.push(a);}
 addLand(makeFox(),-16,11);
-for(let i=0;i<4;i++)addLand(makeDeer(i===0),24+(rnd()-.5)*9,-4+(rnd()-.5)*9);
+for(let i=0;i<8;i++)addLand(makeDeer(i===0),24+(rnd()-.5)*14,-4+(rnd()-.5)*14);
 
 function step(a,dt,sp){const dx=a.tx-a.x,dz=a.tz-a.z,d=Math.hypot(dx,dz);a.moving=d>.05;
   if(a.moving){const s=Math.min(sp*dt,d)/d;a.x+=dx*s;a.z+=dz*s;a.g.rotation.y=Math.atan2(dx,dz);}}
@@ -129,8 +129,8 @@ function updateLand(dt,env){
 }
 
 // ---------- birds over the clearing (perch on roof ridge / chimney at night or in rain) ----------
-const perch=[[-2.2,RIDGE+.06,0],[0,RIDGE+.1,0],[2.2,RIDGE+.06,0],[CHIMNEY_TOP.x,CHIMNEY_TOP.y+.06,CHIMNEY_TOP.z]];
-const NB=isMobile?4:6,birds=[];
+const perch=[...[-3.8,-2.6,-1.4,0,1.4,2.6,3.8].map(x=>[x,RIDGE+.06,0]),[CHIMNEY_TOP.x,CHIMNEY_TOP.y+.06,CHIMNEY_TOP.z]];
+const NB=isMobile?8:12,birds=[];
 for(let i=0;i<NB;i++){const o=Object.assign(makeBird(mBird,mBird,mBeak,1),
     {cx:(rnd()-.5)*60,cz:-8+(rnd()-.5)*60,cy:9+rnd()*9,r:5+rnd()*11,w:(.2+rnd()*.35)*(rnd()<.5?-1:1),ph:rnd()*6.28,perch:perch[i%perch.length],land:0});
   o.g.position.set(o.cx+Math.cos(o.ph)*o.r,o.cy,o.cz+Math.sin(o.ph)*o.r);scene.add(o.g);birds.push(o);}
@@ -152,7 +152,7 @@ function updateBirds(dt,env){
 }
 
 // ---------- gulls over the sea ----------
-const NG=isMobile?5:8,gulls=[];
+const NG=isMobile?10:16,gulls=[];
 for(let i=0;i<NG;i++){const z=-130+rnd()*190;
   const o=Object.assign(makeBird(mGull,mGullW,mBeak,1.7),{cx:coastEdge(z)-30-rnd()*30,cz:z,cy:SEA+7+rnd()*8,r:5+rnd()*9,w:(.22+rnd()*.3)*(rnd()<.5?-1:1),ph:rnd()*6.28});
   o.g.position.set(o.cx+Math.cos(o.ph)*o.r,o.cy,o.cz+Math.sin(o.ph)*o.r);scene.add(o.g);gulls.push(o);}
@@ -172,7 +172,7 @@ function updateGulls(dt){
 }
 
 // ---------- dolphins: cruise at the surface, occasionally leap out ----------
-const ND=isMobile?2:3,dolphins=[];
+const ND=isMobile?4:6,dolphins=[];
 for(let i=0;i<ND;i++){const z=-90+rnd()*170;
   const o=Object.assign(makeDolphin(),{cx:coastEdge(z)-16-rnd()*22,cz:z,r:5+rnd()*8,w:(.18+rnd()*.2)*(rnd()<.5?-1:1),ph:rnd()*6.28,jump:false,jt:0,next:15+rnd()*45});
   o.g.position.set(o.cx,SEA,o.cz);scene.add(o.g);dolphins.push(o);}
