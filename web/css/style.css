@@ -92,6 +92,13 @@ canvas#scene{position:fixed;inset:0;width:100vw;height:100vh;display:block}
 .chip span{font-size:15px}
 button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
+.animalRow{display:flex;align-items:center;gap:10px;margin-top:10px}
+.animalRow .lbl{flex:none;font-size:15px}
+.animalRow input{flex:1;min-width:0;accent-color:var(--ember);cursor:pointer}
+.animalRow .val{flex:none;min-width:30px;text-align:right;font:600 14px/1 "Karla",system-ui,sans-serif;
+  font-variant-numeric:tabular-nums;color:var(--ink-soft)}
+input[type=range]:focus-visible{outline:2px solid var(--ember);outline-offset:2px;border-radius:6px}
+
 .hint{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 140px);
   background:var(--glass-strong);padding:8px 14px;border-radius:14px;font-size:14px;color:var(--ink);
   transition:opacity .8s;pointer-events:none;width:max-content;max-width:calc(100% - 32px);text-align:center}
