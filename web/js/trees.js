@@ -23,7 +23,17 @@ while(spots.length<TREES&&tries<20000){tries++;
   if(pathDist(x,z)<4.5)continue;
   if(r<95&&(x*-.88+z*-.47)/r>.93)continue;   // vista toward the sea
   spots.push([x,y,z,.7+rnd()*.9,rnd()*6.28]);}
-const crownMat=weatherize(std(0xffffff,{flatShading:true,roughness:.95}),'tree');
+const crownMat=weatherize(std(0xffffff,{flatShading:true,roughness:.95}),'tree',`
+  #ifdef USE_INSTANCING
+    vec2 ip=vec2(instanceMatrix[3][0],instanceMatrix[3][2]);
+  #else
+    vec2 ip=vec2(0.0);
+  #endif
+  float ty=clamp(position.y/6.7,0.0,1.0),bend=ty*ty;
+  float gust=sin(uTime*1.1+ip.x*.13+ip.y*.07)*.5+.5;
+  float w=sin(uTime*2.1+ip.x*.31+ip.y*.17)*.6+sin(uTime*3.7+ip.y*.43)*.4;
+  transformed.x+=(0.05+uWind*0.38)*bend*(.55+.45*gust)+w*uWind*0.12*bend;
+  transformed.z+=sin(uTime*1.7+ip.x*.21)*0.05*bend*(.3+uWind);`);
 const crowns=new THREE.InstancedMesh(crown,crownMat,spots.length);
 const trunks=new THREE.InstancedMesh(trunk,std(0x4d3624),spots.length);
 const M=new THREE.Matrix4(),Q=new THREE.Quaternion(),S=new THREE.Vector3(),P=new THREE.Vector3(),UP=new THREE.Vector3(0,1,0);

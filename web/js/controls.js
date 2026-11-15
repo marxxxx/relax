@@ -3,7 +3,7 @@ import {$,clamp} from './util.js';
 import {canvas,camera} from './renderer.js';
 import {heightAt,SEA} from './world.js';
 import {blocked,tooSteep,floorAt,isInside} from './collision.js';
-import {state} from './state.js';
+import {state,cur} from './state.js';
 
 // ---------- camera control ----------
 export const target=new THREE.Vector3(2,4.6,2.5);
@@ -64,6 +64,7 @@ function hideHint(){$('hint').classList.add('gone');}
 setTimeout(hideHint,7000);
 
 export function updateCamera(dt){
+  const g=Math.max(0,cur.wind-1)*1.6; // sturm gusts shake the camera
   if(state.mode==='fp'){
     let f=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0)-joyY;
     let r=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0)+joyX;
@@ -78,12 +79,15 @@ export function updateCamera(dt){
     const fy=floorAt(player.x,player.z,player.y);player.y+=(fy-player.y)*Math.min(1,dt*12);
     camera.rotation.order='YXZ';camera.rotation.set(player.pitch,player.yaw,0);
     camera.position.set(player.x,player.y+1.62+Math.sin(player.bob)*.03*(moving?1:0),player.z);
+    camera.position.x+=Math.sin(state.T*7.1)*g*.035;camera.position.y+=Math.sin(state.T*11.3+1.7)*g*.022;
+    camera.rotation.z=Math.sin(state.T*5.9)*g*.014;
     target.set(player.x,player.y+1.6,player.z);
   }else{
   idle+=dt;if(idle>12)tAz+=dt*.025;
   tTgt.y=Math.max(heightAt(tTgt.x,tTgt.z),SEA)+HOFF;target.lerp(tTgt,Math.min(1,dt*6));
   az+=(tAz-az)*Math.min(1,dt*6);pol+=(tPol-pol)*Math.min(1,dt*6);dist+=(tDist-dist)*Math.min(1,dt*5);
   camera.position.set(target.x+dist*Math.sin(pol)*Math.sin(az),target.y+dist*Math.cos(pol),target.z+dist*Math.sin(pol)*Math.cos(az));
+  camera.position.x+=Math.sin(state.T*7.1)*g*.02;camera.position.y+=Math.sin(state.T*11.3+1.7)*g*.013;
   const gh=Math.max(heightAt(camera.position.x,camera.position.z),SEA)+1.2;if(camera.position.y<gh)camera.position.y=gh;
   camera.lookAt(target);
   }
