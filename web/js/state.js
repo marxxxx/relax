@@ -1,6 +1,6 @@
 // Mutable state shared between modules. Imported bindings are read-only,
 // so everything that several modules write lives on these objects.
-export const state={hour:17,playing:true,dragging:false,speedI:1,wKey:'klar',T:0,flash:0,nextBolt:6,snowCover:0,wet:0,mode:'orbit',indoor:0};
+export const state={hour:17,playing:true,dragging:false,speedI:1,wKey:'klar',T:0,flash:0,nextBolt:6,snowCover:0,wet:0,mode:'orbit',indoor:0,animalFrac:1};
 export const SPEEDS=[[20,'1 h / 20 s'],[8,'1 h / 8 s'],[2,'1 h / 2 s']];
 
 // ---------- weather presets ----------

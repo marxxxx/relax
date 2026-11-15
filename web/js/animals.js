@@ -1,7 +1,7 @@
 // Animals: birds over the clearing, gulls over the sea, a fox and a deer herd on land, and
 // dolphins that occasionally leap out of the water. Built from primitives when this module is
 // evaluated — imported last in main.js, so the seeded rnd() sequence of the world stays intact.
-import {isMobile,rnd,lerp,smooth} from './util.js';
+import {$,isMobile,rnd,lerp,smooth} from './util.js';
 import {LAKE,SEA,FIRE,coastEdge,heightAt} from './world.js';
 import {scene} from './renderer.js';
 import {std,weatherize} from './materials.js';
@@ -104,6 +104,7 @@ function step(a,dt,sp){const dx=a.tx-a.x,dz=a.tz-a.z,d=Math.hypot(dx,dz);a.movin
 function updateLand(dt,env){
   const fp=state.mode==='fp';
   for(const a of land){
+    if(!a.g.visible)continue;
     const pd=fp?Math.hypot(player.x-a.x,player.z-a.z):1e9,fr=a.kind==='fox'?6:8;
     if(pd<fr){a.mode='flee';a.flee=2.6;const d=Math.max(.001,pd);
       let tx=a.x+(a.x-player.x)/d*20,tz=a.z+(a.z-player.z)/d*20;
@@ -136,6 +137,7 @@ for(let i=0;i<NB;i++){const o=Object.assign(makeBird(mBird,mBird,mBeak,1),
 function updateBirds(dt,env){
   const t=state.T,hide=env.night>.55||cur.rain>.55||cur.storm>.4;
   for(const b of birds){
+    if(!b.g.visible)continue;
     b.ph+=b.w*dt*(.6+cur.wind*.8);
     let tx=b.cx+Math.cos(b.ph)*b.r,ty=b.cy+Math.sin(b.ph*2.1)*.9,tz=b.cz+Math.sin(b.ph)*b.r;
     if(hide){tx=b.perch[0];ty=b.perch[1];tz=b.perch[2];}
@@ -157,7 +159,7 @@ for(let i=0;i<NG;i++){const z=-130+rnd()*190;
 function updateGulls(dt){
   const t=state.T;
   for(const g of gulls){
-    g.g.visible=cur.storm<.75;
+    if(!g.g.visible)continue;
     g.ph+=g.w*dt*(.6+cur.wind);
     const k=Math.min(1,dt*1.6),p=g.g.position,ox=p.x,oz=p.z;
     p.x=lerp(p.x,g.cx+Math.cos(g.ph)*g.r,k);
@@ -182,6 +184,7 @@ function burst(x,z,n){for(let i=0;i<n;i++){const s=spData[spI++%SP];s.life=0;s.x
 function updateDolphins(dt){
   const t=state.T;
   for(const d of dolphins){
+    if(!d.g.visible)continue;
     const p=d.g.position;
     if(d.jump){
       d.jt+=dt;const u=Math.min(1,d.jt/1.2);
@@ -202,7 +205,15 @@ function updateDolphins(dt){
 
 // ---------- per-frame ----------
 export const animals={birds,gulls,land,dolphins};
+// how many animals are active at the current slider fraction (fox counts as the first land animal)
+export function animalCount(){const f=state.animalFrac;
+  return Math.round(f*NB)+Math.round(f*NG)+Math.round(f*ND)+(f<=0?0:1+Math.round(f*(land.length-1)));}
 export function updateAnimals(dt,env){
+  const f=state.animalFrac,nB=Math.round(f*NB),nG=Math.round(f*NG),nD=Math.round(f*ND),nL=f<=0?0:1+Math.round(f*(land.length-1));
+  birds.forEach((b,i)=>b.g.visible=i<nB);
+  gulls.forEach((g,i)=>g.g.visible=i<nG&&cur.storm<.75);
+  dolphins.forEach((d,i)=>d.g.visible=i<nD);
+  land.forEach((a,i)=>a.g.visible=i<nL);
   updateBirds(dt,env);updateGulls(dt);updateLand(dt,env);updateDolphins(dt);
   const sp=splash.geometry.attributes.position,sc=splash.geometry.attributes.color;
   for(let i=0;i<SP;i++){const s=spData[i];
@@ -212,3 +223,8 @@ export function updateAnimals(dt,env){
         sp.setXYZ(i,s.x,s.y,s.z);const f=(1-s.life)*.9;sc.setXYZ(i,f,f*.98,f*.88);}}}
   sp.needsUpdate=sc.needsUpdate=true;
 }
+
+// ---------- UI: "Tiere" slider in the panel (sets state.animalFrac, applied per frame above) ----------
+{const aIn=$('animals'),aVal=$('animalsVal');
+  aIn.addEventListener('input',()=>{state.animalFrac=aIn.value/100;aVal.textContent=animalCount();});
+  aVal.textContent=animalCount();}
