@@ -21,6 +21,7 @@ services:
       - FOWNER
       - SETUID
       - SETGID
+      - KILL
     environment:
       PROJECT_ROOT: ${PROJECT_ROOT:?Set PROJECT_ROOT to an existing absolute project directory}
       HOST_UID: ${HOST_UID:-1000}

@@ -1,2 +1,3 @@
 .env.ai-dev
 .superpowers/
+.adw/.env

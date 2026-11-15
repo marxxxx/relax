@@ -19,8 +19,8 @@ when you report cost.
    already was, this run **resumes** an earlier one. Find where that one stopped, working on the
    ticket's branch or worktree (see **Naming**) if one exists:
    - **Spec file, no plan** — a `Approved Spec` comment names an approved spec file. Skip
-     brainstorming: invoke `superpowers:writing-plans` with that spec, then follow the workflow from
-     there.
+     brainstorming: invoke the superpowers `writing-plans` skill with that spec, then follow the
+     workflow from there.
    - **Spec file and plan** (a plan file for that spec) — development was interrupted. Compare the
      plan's tasks with the branch's commits and working tree to find what is done, confirm that with
      the user, then continue executing the plan from the first unfinished task, as its header says.
@@ -37,7 +37,7 @@ when you report cost.
 
 ## 2. Superpowers workflow
 
-Invoke `superpowers:brainstorming` and follow the workflow it leads you through, as its skills
+Invoke the superpowers `brainstorming` skill and follow the workflow it leads you through, as its skills
 write it. This skill adds only the hooks below. They are events, not steps: apply each one whenever
 it occurs, wherever the workflow puts it.
 
@@ -47,6 +47,10 @@ it occurs, wherever the workflow puts it.
   user flows), also ask the user whether you should test it end to end in the running app or they
   prefer to test it manually. If they want you to but `AGENTS.md` has no end-to-end section, say so
   right away. Record the answer, together with the checks it covers, in the agreed scope.
+- **Spec or plan written, handed to the user for review** — lead with a **show-me** view of its
+  design, so the user can judge it without reading the whole file; the file stays the record.
+  show-me is user-invoked only, so read `.agents/skills/show-me/SKILL.md` and follow it. If it is
+  missing, say once that adw's `upgrade` command installs it, then continue without it.
 - **Scope agreed** (brainstorming hands over to building, at whatever size it chose) — the ticket
   must say what gets built. If the user asked for a new ticket, create it now with the ticket
   include's commands (it starts in `in-progress`): a short title and the agreed scope as its
@@ -56,9 +60,6 @@ it occurs, wherever the workflow puts it.
   the ticket already said everything. If the scope changes later in the run, post the final version
   again at close-out.
 - **Branch or worktree created** — name it per **Naming** below.
-- **Subagent dispatched** — never give it the platform's premium top model tier, even when you run
-  on it yourself: use at most the standard flagship tier below it, or a cheaper one where the task
-  allows.
 - **Implementation verified, before integrating** — if the work sits on `main`, move it
   to a branch per **Naming**. Only if the agreed scope says the agent tests end to end: start the
   app as the `AGENTS.md` end-to-end section describes, exercise the changed flows in a browser

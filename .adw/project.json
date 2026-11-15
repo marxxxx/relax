@@ -10,5 +10,8 @@
   },
   "git": {
     "prTarget": "main"
+  },
+  "skills": {
+    "show-me": true
   }
 }
