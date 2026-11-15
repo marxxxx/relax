@@ -23,6 +23,7 @@ import {updateAudio} from './audio.js';
 import {updateUI} from './ui.js';
 import {renderFrame} from './post.js';
 import {state,SPEEDS} from './state.js';
+import {updateAnimals,animals} from './animals.js';
 
 // ---------- main loop ----------
 let lastT=performance.now(),firstFrame=true;
@@ -36,6 +37,7 @@ function frame(now){
   updateSea(env);
   updateEffects(dt,env);
   updatePrecipitation(dt,env);
+  updateAnimals(dt,env);
   updateCamera(dt);
   updateAudio(dt,env);
   updateUI(dt,env.sy);
@@ -44,5 +46,5 @@ function frame(now){
   if(firstFrame){firstFrame=false;setTimeout(()=>$('loader').classList.add('gone'),150);}
   requestAnimationFrame(frame);
 }
-window.__lichtung={player,setMode};
+window.__lichtung={player,setMode,animals,state};
 requestAnimationFrame(frame);
