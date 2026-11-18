@@ -31,8 +31,11 @@
 <div class="joy" id="joy" aria-hidden="true"><div class="joyKnob" id="joyKnob"></div></div>
 <div class="hint" id="hint">Ziehen zum Umsehen, zwei Finger oder Rechtsklick zum Verschieben, Pinch oder Mausrad zum Zoomen</div>
 
-<div class="panel">
-  <div class="card">
+<div class="panel" id="panel">
+  <button class="panelTog" id="panelTog" aria-expanded="true" aria-controls="panelCard" aria-label="Bedienfeld einklappen">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg><span id="panelLbl">Zeit &amp; Wetter</span>
+  </button>
+  <div class="card" id="panelCard">
     <div class="timeRow">
       <button class="play" id="playBtn" aria-label="Zeit anhalten">
         <svg id="playIcon" viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg>

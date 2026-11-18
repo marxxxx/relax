@@ -2,6 +2,13 @@ import {$} from './util.js';
 import {state,SPEEDS,W} from './state.js';
 
 // ---------- UI ----------
+// collapsible bottom panel; its live height (--panelH) keeps joystick and hint above it
+const panel=$('panel'),panelTog=$('panelTog');
+export function setPanel(min){document.body.classList.toggle('panelMin',min);panelTog.setAttribute('aria-expanded',!min);
+  panelTog.setAttribute('aria-label',min?'Bedienfeld ausklappen':'Bedienfeld einklappen');}
+panelTog.addEventListener('click',()=>setPanel(!document.body.classList.contains('panelMin')));
+const panelH=()=>document.documentElement.style.setProperty('--panelH',panel.offsetHeight+'px');
+new ResizeObserver(panelH).observe(panel);panelH();
 const timeIn=$('time'),knob=$('knob'),clock=$('clock');
 timeIn.addEventListener('input',()=>{state.hour=parseFloat(timeIn.value);state.dragging=true;});
 timeIn.addEventListener('change',()=>{state.dragging=false;});
