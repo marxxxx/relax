@@ -170,7 +170,7 @@ function rideFly(b,dt,inp){
   const lo=Math.max(heightAt(p.x,p.z),SEA)+.8;if(p.y<lo){p.y=lo;if(pt<0)rideCtl.pitch=lerp(pt,0,Math.min(1,dt*4));}p.y=Math.min(p.y,70);
   b.g.rotation.x=lerp(b.g.rotation.x,-pt*.7,Math.min(1,dt*5));
   b.g.rotation.z=lerp(b.g.rotation.z,inp.r*.45,Math.min(1,dt*4));
-  const fl=Math.sin(state.T*(inp.f>0||inp.up>0||pt>.15?13:9))*(inp.f>0||inp.up>0||pt>.15?.75:.18);
+  const flap=inp.f>0||inp.up>0||pt>.15;b.fp=(b.fp||0)+dt*(flap?13:9);const fl=Math.sin(b.fp)*(flap?.75:.18);
   b.wlG.rotation.z=fl;b.wrG.rotation.z=-fl;b.land=0;}
 function updateBirds(dt,env){
   const t=state.T,hide=env.night>.55||cur.rain>.55||cur.storm>.4;
@@ -242,7 +242,8 @@ function updateDolphins(dt){
       d.spd=lerp(d.spd||0,Math.max(0,inp.f)*(inp.run?10:5.5),Math.min(1,dt*1.5));
       p.z+=Math.cos(h)*d.spd*dt;p.x=Math.min(p.x+Math.sin(h)*d.spd*dt,WATER_X(p.z));
       const r=Math.hypot(p.x,p.z);if(r>230){p.x*=230/r;p.z*=230/r;}
-      p.y=SEA+Math.sin(t*1.3+d.ph)*.02;d.g.rotation.x=Math.sin(t*(2+d.spd*.6)+d.ph)*(.04+d.spd*.012);
+      d.sw=(d.sw||0)+dt*(2+d.spd*.4);   // accumulated phase: a speed-dependent frequency times absolute time would jump wildly
+      p.y=SEA+Math.sin(t*1.3+d.ph)*.02;d.g.rotation.x=Math.sin(d.sw)*(.03+d.spd*.006);
       if(rideCtl.jump||inp.up>0){rideCtl.jump=false;d.jump=true;d.jt=0;d.jx=p.x;d.jz=p.z;d.jh=h;d.apex=2.6+Math.random()*1.6;burst(p.x,p.z,10);}
     }else{
       d.ph+=d.w*dt;

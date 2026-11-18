@@ -88,7 +88,8 @@ export function updateCamera(dt){
       an.updateWorldMatrix(true,false);
       camP.set(r.eyeOff.x,r.eyeOff.y,r.eyeOff.z).applyMatrix4(an.matrixWorld);
       camera.rotation.order='YXZ';
-      camera.rotation.set(fly?rideCtl.pitch:clamp(-(an.rotation.x||0)-.03+rideCtl.pitch,-1.3,1.3),r.g.rotation.y+Math.PI,0);
+      const bp=-(an.rotation.x||0)*(r.kind==='dolphin'&&!r.jump?.3:1);   // swim bob only lightly tilts the view
+      camera.rotation.set(fly?rideCtl.pitch:clamp(bp-.03+rideCtl.pitch,-1.3,1.3),r.g.rotation.y+Math.PI,0);
       camera.position.copy(camP);target.copy(camP);
     }else{
     const {f,r,run}=moveAxes(),sp=(run?4.6:2.4)*dt;
