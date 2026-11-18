@@ -7,7 +7,7 @@ import {CIRCLES} from './collision.js';
 import {scene} from './renderer.js';
 import {std,weatherize} from './materials.js';
 import {state,cur} from './state.js';
-import {player,setMode} from './controls.js';
+import {player,setMode,rideCtl,moveAxes} from './controls.js';
 import {particles} from './particles.js';
 import {CHIMNEY_TOP} from './interior.js';
 import {RIDGE} from './house.js';
@@ -115,10 +115,17 @@ function step(a,dt,sp){const dx=a.tx-a.x,dz=a.tz-a.z,d=Math.hypot(dx,dz);a.movin
     if(!landOK(nx,nz)){a.moving=false;return;}   // never walk through trees/rocks/lake/cabin
     a.x=nx;a.z=nz;a.g.rotation.y=Math.atan2(dx,dz);}}
 
+// ridden: W/S walk forward/back, A/D or drag turn, Shift runs; obstacles block per axis so the animal slides along them
+function rideLand(a,dt,inp){
+  const h=a.g.rotation.y-(inp.r*2.4*dt)+rideCtl.turn;rideCtl.turn=0;a.g.rotation.y=h;
+  const sp=inp.f*(inp.f<0?1:inp.run?5:a.kind==='fox'?1.6:1.9)*dt,nx=a.x+Math.sin(h)*sp,nz=a.z+Math.cos(h)*sp,ok=(x,z)=>landOK(x,z)||!landOK(a.x,a.z);
+  a.moving=Math.abs(inp.f)>.05||Math.abs(inp.r)>.3;a.mode=inp.run&&inp.f>0?'flee':'ride';
+  if(ok(nx,a.z))a.x=nx;if(ok(a.x,nz))a.z=nz;}
 function updateLand(dt,env){
   const fp=state.mode==='fp';
   for(const a of land){
     if(!a.g.visible)continue;
+    if(a===state.rider){rideLand(a,dt,moveAxes());animLand(a,dt,false);continue;}
     const pd=fp?Math.hypot(player.x-a.x,player.z-a.z):1e9,fr=a.kind==='fox'?6:8;
     if(pd<fr){a.mode='flee';a.flee=2.6;const d=Math.max(.001,pd);
       let tx=a.x+(a.x-player.x)/d*20,tz=a.z+(a.z-player.z)/d*20;
@@ -132,14 +139,17 @@ function updateLand(dt,env){
       step(a,dt,1.15);
       if(!a.moving){a.mode='graze';a.t=1.5+Math.random()*4;}
     }else{a.moving=false;a.t-=dt;if(a.t<=0){a.mode='wander';const s=pickSpot(a.home[0],a.home[1],15);a.tx=s[0];a.tz=s[1];}}
-    a.y=heightAt(a.x,a.z);a.g.position.set(a.x,sleep?a.y-.07:a.y,a.z);
-    // animation: leg swing, tail wag, head/neck pitch (grazing = head down)
-    const t=state.T,mv=a.moving?1:0;
-    a.legs.forEach((l,i)=>l.rotation.x=mv*Math.sin(t*(a.mode==='flee'?13:8)+i*1.6)*.45);
-    a.tailG.rotation.y=Math.sin(t*5+a.seed)*.3*(mv?1.8:1);
-    const pitch=a.mode==='graze'?.8:sleep?1.15:Math.sin(t*1.8+a.seed)*.07;
-    const h=a.kind==='fox'?a.head:a.neck;h.rotation.x=lerp(h.rotation.x,pitch,Math.min(1,dt*6));
+    animLand(a,dt,sleep);
   }
+}
+function animLand(a,dt,sleep){
+  a.y=heightAt(a.x,a.z);a.g.position.set(a.x,sleep?a.y-.07:a.y,a.z);
+  // animation: leg swing, tail wag, head/neck pitch (grazing = head down)
+  const t=state.T,mv=a.moving?1:0;
+  a.legs.forEach((l,i)=>l.rotation.x=mv*Math.sin(t*(a.mode==='flee'?13:8)+i*1.6)*.45);
+  a.tailG.rotation.y=Math.sin(t*5+a.seed)*.3*(mv?1.8:1);
+  const pitch=a.mode==='graze'?.8:sleep?1.15:Math.sin(t*1.8+a.seed)*.07;
+  const h=a.kind==='fox'?a.head:a.neck;h.rotation.x=lerp(h.rotation.x,pitch,Math.min(1,dt*6));
 }
 
 // ---------- birds over the clearing (perch on roof ridge / chimney at night or in rain) ----------
@@ -148,12 +158,25 @@ const perch=[...[-3.8,-2.6,-1.4,0,1.4,2.6,3.8].map(x=>[x,RIDGE+.32-.03,0]),[CHIM
 const NB=isMobile?8:12,birds=[];
 for(let i=0;i<NB;i++){const o=Object.assign(makeBird(mBird,mBird,mBeak,1),
     {cx:(rnd()-.5)*60,cz:-8+(rnd()-.5)*60,cy:9+rnd()*9,r:5+rnd()*11,w:(.2+rnd()*.35)*(rnd()<.5?-1:1),ph:rnd()*6.28,perch:perch[i%perch.length],land:0,kind:'bird'});
-  o.anchor=o.g;o.eyeOff=new THREE.Vector3(0,.12,.05);
+  o.anchor=o.g;o.eyeOff=new THREE.Vector3(0,.12,.05);o.g.rotation.order='YXZ';
   o.g.position.set(o.cx+Math.cos(o.ph)*o.r,o.cy,o.cz+Math.sin(o.ph)*o.r);scene.add(o.g);birds.push(o);}
+// ridden flight: always gliding forward, W/S speed, A/D or drag turn, drag up/down pitches the climb, Space/E up, Q/C down
+function rideFly(b,dt,inp){
+  const p=b.g.position,h=b.g.rotation.y-inp.r*1.6*dt+rideCtl.turn;rideCtl.turn=0;b.g.rotation.y=h;
+  b.spd=lerp(b.spd||4,(4+inp.f*3)*(inp.run?1.7:1),Math.min(1,dt*2));
+  const pt=rideCtl.pitch,hz=b.spd*Math.cos(pt);
+  p.x+=Math.sin(h)*hz*dt;p.z+=Math.cos(h)*hz*dt;p.y+=(b.spd*Math.sin(pt)+inp.up*3)*dt;
+  const r=Math.hypot(p.x,p.z);if(r>230){p.x*=230/r;p.z*=230/r;}
+  const lo=Math.max(heightAt(p.x,p.z),SEA)+.8;if(p.y<lo){p.y=lo;if(pt<0)rideCtl.pitch=lerp(pt,0,Math.min(1,dt*4));}p.y=Math.min(p.y,70);
+  b.g.rotation.x=lerp(b.g.rotation.x,-pt*.7,Math.min(1,dt*5));
+  b.g.rotation.z=lerp(b.g.rotation.z,inp.r*.45,Math.min(1,dt*4));
+  const fl=Math.sin(state.T*(inp.f>0||inp.up>0||pt>.15?13:9))*(inp.f>0||inp.up>0||pt>.15?.75:.18);
+  b.wlG.rotation.z=fl;b.wrG.rotation.z=-fl;b.land=0;}
 function updateBirds(dt,env){
   const t=state.T,hide=env.night>.55||cur.rain>.55||cur.storm>.4;
   for(const b of birds){
     if(!b.g.visible)continue;
+    if(b===state.rider){rideFly(b,dt,moveAxes());continue;}
     b.ph+=b.w*dt*(.6+cur.wind*.8);
     let tx=b.cx+Math.cos(b.ph)*b.r,ty=b.cy+Math.sin(b.ph*2.1)*.9,tz=b.cz+Math.sin(b.ph)*b.r;
     if(hide){tx=b.perch[0];ty=b.perch[1];tz=b.perch[2];}
@@ -172,12 +195,13 @@ function updateBirds(dt,env){
 const NG=isMobile?10:16,gulls=[];
 for(let i=0;i<NG;i++){const z=-130+rnd()*190;
   const o=Object.assign(makeBird(mGull,mGullW,mBeak,1.7),{cx:coastEdge(z)-30-rnd()*30,cz:z,cy:SEA+7+rnd()*8,r:5+rnd()*9,w:(.22+rnd()*.3)*(rnd()<.5?-1:1),ph:rnd()*6.28,kind:'gull'});
-  o.anchor=o.g;o.eyeOff=new THREE.Vector3(0,.2,.08);
+  o.anchor=o.g;o.eyeOff=new THREE.Vector3(0,.2,.08);o.g.rotation.order='YXZ';
   o.g.position.set(o.cx+Math.cos(o.ph)*o.r,o.cy,o.cz+Math.sin(o.ph)*o.r);scene.add(o.g);gulls.push(o);}
 function updateGulls(dt){
   const t=state.T;
   for(const g of gulls){
     if(!g.g.visible)continue;
+    if(g===state.rider){rideFly(g,dt,moveAxes());continue;}
     g.ph+=g.w*dt*(.6+cur.wind);
     const k=Math.min(1,dt*1.6),p=g.g.position,ox=p.x,oz=p.z;
     p.x=lerp(p.x,g.cx+Math.cos(g.ph)*g.r,k);
@@ -195,7 +219,7 @@ const WATER_X=z=>coastEdge(z)-30;
 const ND=isMobile?4:6,dolphins=[];
 for(let i=0;i<ND;i++){const z=-90+rnd()*170,r=5+rnd()*8;
   const o=Object.assign(makeDolphin(),{cx:coastEdge(z)-r-32-rnd()*18,cz:z,r,w:(.18+rnd()*.2)*(rnd()<.5?-1:1),ph:rnd()*6.28,jump:false,jt:0,next:15+rnd()*45});
-  o.g.position.set(Math.min(o.cx,WATER_X(z)),SEA,o.cz);scene.add(o.g);dolphins.push(o);}
+  o.g.position.set(Math.min(o.cx,WATER_X(z)),SEA,o.cz);o.g.rotation.order='YXZ';scene.add(o.g);dolphins.push(o);}
 const SP=48,splash=particles(SP,.4,{opacity:.9});
 {const sp=splash.geometry.attributes.position;for(let i=0;i<SP;i++)sp.setXYZ(i,0,SEA-60,0);}
 const spData=[...Array(SP)].map(()=>({life:1,x:0,y:0,z:0,vx:0,vy:0,vz:0}));let spI=0;
@@ -208,11 +232,18 @@ function updateDolphins(dt){
     const p=d.g.position;
     if(d.jump){
       d.jt+=dt;const u=Math.min(1,d.jt/1.2);
-      p.z=d.jz+Math.sin(d.jh)*5.5*d.jt;
-      p.x=Math.min(d.jx+Math.cos(d.jh)*5.5*d.jt,WATER_X(p.z));   // a leap never carries them onto the beach
+      p.z=d.jz+Math.cos(d.jh)*5.5*d.jt;
+      p.x=Math.min(d.jx+Math.sin(d.jh)*5.5*d.jt,WATER_X(p.z));   // a leap never carries them onto the beach
       p.y=SEA+d.apex*Math.sin(u*Math.PI);
       d.g.rotation.y=d.jh;d.g.rotation.x=-Math.atan2(d.apex*Math.PI*Math.cos(u*Math.PI)/1.2,5.5);
-      if(u>=1){d.jump=false;d.next=t+35+Math.random()*55;burst(p.x,p.z,12);}
+      if(u>=1){d.jump=false;d.g.rotation.x=0;d.next=t+35+Math.random()*55;burst(p.x,p.z,12);}
+    }else if(d===state.rider){   // ridden: W/S swim speed, A/D or drag turn, Space or tap leaps
+      const inp=moveAxes(),h=d.g.rotation.y-inp.r*1.5*dt+rideCtl.turn;rideCtl.turn=0;d.g.rotation.y=h;
+      d.spd=lerp(d.spd||0,Math.max(0,inp.f)*(inp.run?10:5.5),Math.min(1,dt*1.5));
+      p.z+=Math.cos(h)*d.spd*dt;p.x=Math.min(p.x+Math.sin(h)*d.spd*dt,WATER_X(p.z));
+      const r=Math.hypot(p.x,p.z);if(r>230){p.x*=230/r;p.z*=230/r;}
+      p.y=SEA+Math.sin(t*1.3+d.ph)*.02;d.g.rotation.x=Math.sin(t*(2+d.spd*.6)+d.ph)*(.04+d.spd*.012);
+      if(rideCtl.jump||inp.up>0){rideCtl.jump=false;d.jump=true;d.jt=0;d.jx=p.x;d.jz=p.z;d.jh=h;d.apex=2.6+Math.random()*1.6;burst(p.x,p.z,10);}
     }else{
       d.ph+=d.w*dt;
       const z=d.cz+Math.sin(d.ph)*d.r,x=Math.min(d.cx+Math.cos(d.ph)*d.r,WATER_X(z)),ox=p.x,oz=p.z;
@@ -229,6 +260,12 @@ export const animals={birds,gulls,land,dolphins};
 // how many animals are active at the current slider fraction (fox counts as the first land animal)
 export function animalCount(){const f=state.animalFrac;
   return Math.round(f*NB)+Math.round(f*NG)+Math.round(f*ND)+(f<=0?0:1+Math.round(f*(land.length-1)));}
+// hand a ridden animal back to its own behaviour, starting from where the rider left it
+let ridden=null;
+function release(a){const p=a.g.position;
+  if(a.home){a.home=[a.x,a.z];a.mode='graze';a.t=1.5+Math.random()*2;a.tx=null;a.flee=0;return;}
+  a.g.rotation.x=a.g.rotation.z=0;a.spd=0;
+  a.cx=p.x-Math.cos(a.ph)*a.r;a.cz=p.z-Math.sin(a.ph)*a.r;if(a.cy!==undefined)a.cy=p.y;}
 export function updateAnimals(dt,env){
   const f=state.animalFrac,nB=Math.round(f*NB),nG=Math.round(f*NG),nD=Math.round(f*ND),nL=f<=0?0:1+Math.round(f*(land.length-1));
   birds.forEach((b,i)=>b.g.visible=i<nB);
@@ -236,6 +273,7 @@ export function updateAnimals(dt,env){
   dolphins.forEach((d,i)=>d.g.visible=i<nD);
   land.forEach((a,i)=>a.g.visible=i<nL);
   if(state.rider&&!state.rider.g.visible)state.rider=null;   // ridden animal hidden by the slider -> back to plain fp
+  if(ridden!==state.rider){if(ridden)release(ridden);ridden=state.rider;rideCtl.jump=false;}
   syncBtns();
   updateBirds(dt,env);updateGulls(dt);updateLand(dt,env);updateDolphins(dt);
   const sp=splash.geometry.attributes.position,sc=splash.geometry.attributes.color;
@@ -260,10 +298,13 @@ const KINDS=[{id:'fox',icon:'🦊',name:'Fuchs'},{id:'deer',icon:'🦌',name:'Re
 const vis=k=>k.arr.filter(a=>a.g.visible);
 function syncBtns(){for(const k of KINDS){k.btn.disabled=!vis(k).length;
   k.btn.setAttribute('aria-pressed',!!(state.rider&&state.rider.kind===k.id&&state.rider.g.visible)+'');}}
-function attach(a){if(state.mode!=='fp')setMode('fp');state.rider=a;state.watch=null;
-  const kn=KINDS.find(k=>k.id===a.kind),h=$('hint');
-  h.textContent='Du folgst dem '+kn.name+(isMobile?' – „Rundblick“ oben rechts zum Loslassen':' – Esc für Rundblick');h.classList.remove('gone');
-  clearTimeout(attach.t);attach.t=setTimeout(()=>h.classList.add('gone'),5000);syncBtns();}
+const HOW={land:['W A S D zum Laufen, Shift zum Rennen','Joystick zum Laufen'],fly:['W A S D zum Fliegen, Leertaste/Q steigen/sinken, Ziehen zum Neigen','Joystick zum Fliegen, Ziehen zum Steigen/Sinken'],
+  swim:['W A S D zum Schwimmen, Leertaste zum Springen','Joystick zum Schwimmen, Tippen zum Springen']};
+function attach(a){if(state.mode!=='fp')setMode('fp');state.rider=a;state.watch=null;rideCtl.turn=0;rideCtl.pitch=0;
+  if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();   // so Space doesn't re-press the animal button
+  const kn=KINDS.find(k=>k.id===a.kind),h=$('hint'),how=HOW[a.home?'land':a.kind==='dolphin'?'swim':'fly'][isMobile?1:0];
+  h.textContent='Du steuerst: '+kn.name+' – '+how+(isMobile?' · „Rundblick“ zum Loslassen':' · Esc für Rundblick');h.classList.remove('gone');
+  clearTimeout(attach.t);attach.t=setTimeout(()=>h.classList.add('gone'),8000);syncBtns();}
 function onKind(k){const v=vis(k);if(!v.length)return;
   if(state.rider&&state.rider.kind===k.id){const i=v.indexOf(state.rider);attach(v[(i+1)%v.length]);}  // same kind again -> next animal of this kind
   else attach(v[0]);}
