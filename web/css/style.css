@@ -49,10 +49,10 @@ canvas#scene{position:fixed;inset:0;width:100vw;height:100vh;display:block}
 .iconbtn.walk{background:var(--ember);color:#2a1a06;border-color:transparent}
 .iconbtn.walk[aria-pressed="true"]{background:var(--glass);color:var(--ink);border-color:var(--line)}
 @media (max-width:420px){#soundLbl{display:none}}
-.joy{position:fixed;left:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 150px);width:124px;height:124px;border-radius:50%;
+.joy{position:fixed;left:18px;bottom:calc(var(--panelH,150px) + 14px);width:124px;height:124px;border-radius:50%;
   background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:none;touch-action:none}
 .joyKnob{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:var(--ink);opacity:.85;pointer-events:none}
-@media (pointer:coarse){body.fp .joy{display:block}}
+@media (pointer:coarse){body.fp .joy{display:block}body.fp .hint{bottom:calc(var(--panelH,140px) + 152px)}}
 .iconbtn{white-space:nowrap;appearance:none;border:1px solid var(--line);background:var(--glass);color:var(--ink);
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   height:42px;min-width:42px;padding:0 12px;border-radius:21px;font:600 14px/1 "Karla",system-ui,sans-serif;
@@ -61,7 +61,17 @@ canvas#scene{position:fixed;inset:0;width:100vw;height:100vh;display:block}
 .iconbtn svg{width:18px;height:18px}
 
 .panel{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(560px,100%);
-  padding:0 10px calc(env(safe-area-inset-bottom,0px) + 10px)}
+  padding:0 10px calc(env(safe-area-inset-bottom,0px) + 10px);display:flex;flex-direction:column;align-items:center}
+.panel .card{align-self:stretch}
+.panelTog{appearance:none;border:1px solid var(--line);border-bottom:none;background:var(--glass);color:var(--ink-soft);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:14px 14px 0 0;margin-bottom:-1px;
+  height:28px;padding:0 14px;font:600 13px/1 "Karla",system-ui,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.panelTog svg{width:14px;height:14px;transition:transform .25s}
+.panelTog #panelLbl{display:none}
+body.panelMin .panelTog{border-bottom:1px solid var(--line);border-radius:14px;height:36px;color:var(--ink)}
+body.panelMin .panelTog #panelLbl{display:inline}
+body.panelMin .panelTog svg{transform:rotate(180deg)}
+body.panelMin .panel .card{display:none}
 .card{background:var(--glass);border:1px solid var(--line);border-radius:22px;
   backdrop-filter:blur(16px) saturate(1.2);-webkit-backdrop-filter:blur(16px) saturate(1.2);
   padding:12px 12px 10px}
@@ -106,7 +116,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 .abtn:disabled{opacity:.35;cursor:default}
 input[type=range]:focus-visible{outline:2px solid var(--ember);outline-offset:2px;border-radius:6px}
 
-.hint{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 140px);
+.hint{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--panelH,140px) + 12px);
   background:var(--glass-strong);padding:8px 14px;border-radius:14px;font-size:14px;color:var(--ink);
   transition:opacity .8s;pointer-events:none;width:max-content;max-width:calc(100% - 32px);text-align:center}
 .hint.gone{opacity:0}

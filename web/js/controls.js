@@ -4,6 +4,7 @@ import {canvas,camera} from './renderer.js';
 import {heightAt,SEA} from './world.js';
 import {blocked,tooSteep,floorAt,isInside} from './collision.js';
 import {state,cur} from './state.js';
+import {setPanel} from './ui.js';
 
 // ---------- camera control ----------
 export const target=new THREE.Vector3(2,4.6,2.5);
@@ -63,7 +64,11 @@ joy.addEventListener('pointerup',joyEnd);joy.addEventListener('pointercancel',jo
 
 
 const touchUI=matchMedia('(pointer:coarse)').matches;
+let panelWasMin=false;
 export function setMode(m){
+  const bc=document.body.classList;
+  if(m==='fp'&&state.mode!=='fp'){panelWasMin=bc.contains('panelMin');setPanel(true);}   // walking/riding: fold the panel away, restore it on return
+  else if(m!=='fp'&&state.mode==='fp')setPanel(panelWasMin);
   state.mode=m;document.body.classList.toggle('fp',m==='fp');
   $('modeBtn').textContent=m==='fp'?'Rundblick':'Hineingehen';
   $('modeBtn').setAttribute('aria-pressed',m==='fp');
