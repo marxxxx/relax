@@ -4,7 +4,7 @@ import {scene} from './renderer.js';
 import {weatherize} from './materials.js';
 
 // ---------- terrain ----------
-const TS=1600,TSEG=isMobile?280:620;   // big enough to hold the far plain and the outer ring
+const TS=1600,TSEG=isMobile?240:580;   // big enough to hold the far plain and the outer ring
 const tg=new THREE.PlaneGeometry(TS,TS,TSEG,TSEG);tg.rotateX(-Math.PI/2);
 const tp=tg.attributes.position;
 for(let i=0;i<tp.count;i++){tp.setY(i,heightAt(tp.getX(i),tp.getZ(i)));}

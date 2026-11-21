@@ -11,7 +11,8 @@ function baseHeight(x,z){
   let h=(fbm(x*.012+10,z*.012+3)-.5)*16*(.35+.65*smooth(0,45,dx));
   // the ring falls away beyond ~305; due east the fall is stretched into a wide pass
   const east=smooth(.35,1,Math.cos(ang));
-  h+=Math.pow(Math.max(0,r-120),1.45)*.017*(.5+fbm(x*.018+4,z*.018))*smooth(-30,40,dx)*(1-smooth(305,395+90*east,r));
+  const mf=smooth(-30,40,dx)*(1-smooth(305,395+90*east,r));
+  if(mf>0)h+=Math.pow(Math.max(0,r-120),1.45)*.017*(.5+fbm(x*.018+4,z*.018))*mf;   // skipped where the factor is 0 (same value, less work)
   h*=smooth(13,44,r);
   h-=8*(1-smooth(0,48,dx));          // the land slopes gently toward the edge, so the sea is visible
   const lr=Math.hypot(x-LAKE.x,z-LAKE.z);
@@ -30,9 +31,9 @@ function baseHeight(x,z){
     fh+=Math.pow(Math.max(0,r-615),1.4)*.05*(.55+.9*fbm(x*.013+9,z*.013+5))*gap;
     h=h*(1-far)+fh*far;}
   // cliff: land above, beach and seabed below
-  const beach=SEA+1.4+(fbm(x*.08,z*.08)-.5)*.8-Math.max(0,-dx-12)*.32;
   const k=smooth(-9.5,-1,dx);
-  const crag=(fbm(z*.22+7,x*.22)-.5)*5*k*(1-k)*4;
+  const beach=k>=1?0:SEA+1.4+(fbm(x*.08,z*.08)-.5)*.8-Math.max(0,-dx-12)*.32;      // inland k=1: the beach term is 0
+  const crag=(k>0&&k<1)?(fbm(z*.22+7,x*.22)-.5)*5*k*(1-k)*4:0;
   return Math.max(SEA-14,beach*(1-k)+h*k+crag);
 }
 // a trail from the clearing to the edge, then a path down a ravine to the beach
