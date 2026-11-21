@@ -8,6 +8,37 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Karla:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<link rel="modulepreload" href="js/animals.js">
+<link rel="modulepreload" href="js/audio.js">
+<link rel="modulepreload" href="js/cabin.js">
+<link rel="modulepreload" href="js/campfire.js">
+<link rel="modulepreload" href="js/collision.js">
+<link rel="modulepreload" href="js/controls.js">
+<link rel="modulepreload" href="js/effects.js">
+<link rel="modulepreload" href="js/environment.js">
+<link rel="modulepreload" href="js/grass.js">
+<link rel="modulepreload" href="js/house.js">
+<link rel="modulepreload" href="js/interior.js">
+<link rel="modulepreload" href="js/lights.js">
+<link rel="modulepreload" href="js/main.js">
+<link rel="modulepreload" href="js/materials.js">
+<link rel="modulepreload" href="js/particles.js">
+<link rel="modulepreload" href="js/post.js">
+<link rel="modulepreload" href="js/precipitation.js">
+<link rel="modulepreload" href="js/props.js">
+<link rel="modulepreload" href="js/renderer.js">
+<link rel="modulepreload" href="js/sea.js">
+<link rel="modulepreload" href="js/sky.js">
+<link rel="modulepreload" href="js/state.js">
+<link rel="modulepreload" href="js/terrain.js">
+<link rel="modulepreload" href="js/textures.js">
+<link rel="modulepreload" href="js/trees.js">
+<link rel="modulepreload" href="js/ui.js">
+<link rel="modulepreload" href="js/upstairs.js">
+<link rel="modulepreload" href="js/util.js">
+<link rel="modulepreload" href="js/valley.js">
+<link rel="modulepreload" href="js/weather.js">
+<link rel="modulepreload" href="js/world.js">
 </head>
 <body>
 <canvas id="scene" aria-label="3D-Szene einer Waldhütte auf einer Lichtung"></canvas>
@@ -15,12 +46,11 @@
 <div class="top">
   <div class="title">
     <h1>Lichtung</h1>
-    <p id="mood">Goldene Stunde, klar</p>
+    <p id="mood">Morgendämmerung, klar</p>
   </div>
   <div class="icons">
-    <button class="iconbtn walk" id="modeBtn" aria-pressed="false" aria-label="Zwischen First-Person und Rundblick wechseln">First-Person</button>
-    <button class="iconbtn" id="lookBtn" aria-pressed="true" aria-label="Filmlook ein- oder ausschalten">Filmlook</button>
-    <button class="iconbtn" id="speedBtn" aria-label="Tempo der Zeit ändern">1 h / 8 s</button>
+    <button class="iconbtn walk" id="modeBtn" aria-pressed="false" aria-label="Zwischen Gehen und Rundblick wechseln">Gehen</button>
+    <button class="iconbtn" id="speedBtn" aria-label="Tempo der Zeit ändern">1 h / 20 s</button>
     <button class="iconbtn" id="soundBtn" aria-pressed="false" aria-label="Klang ein- oder ausschalten">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path id="waves" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" opacity=".35"/></svg>
       <span id="soundLbl">Klang</span>
@@ -41,11 +71,11 @@
         <svg id="playIcon" viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg>
       </button>
       <div class="day">
-        <input type="range" id="time" min="0" max="24" step="0.01" value="17" aria-label="Tageszeit">
+        <input type="range" id="time" min="0" max="24" step="0.01" value="5.75" aria-label="Tageszeit">
         <div class="track"></div>
         <div class="knob" id="knob"></div>
       </div>
-      <div class="clock" id="clock">17:00</div>
+      <div class="clock" id="clock">05:45</div>
     </div>
     <div class="weather" role="group" aria-label="Wetter">
       <button class="chip" data-w="klar" aria-pressed="true"><span>☀️</span>Klar</button>
@@ -65,7 +95,13 @@
   </div>
 </div>
 
-<div class="loader" id="loader"><p>Die Lichtung erwacht …</p></div>
+<div class="loader" id="loader">
+  <div class="loadBox">
+    <p>Die Welt wird geladen …</p>
+    <div class="loadTrack" id="loadTrack" role="progressbar" aria-label="Ladefortschritt" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="loadBar" id="loadBar"></div></div>
+    <div class="loadPct" id="loadPct">0 %</div>
+  </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script type="module" src="js/main.js"></script>

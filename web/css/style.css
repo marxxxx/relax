@@ -121,6 +121,10 @@ input[type=range]:focus-visible{outline:2px solid var(--ember);outline-offset:2p
   transition:opacity .8s;pointer-events:none;width:max-content;max-width:calc(100% - 32px);text-align:center}
 .hint.gone{opacity:0}
 .loader{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg);z-index:5;transition:opacity 1.2s}
-.loader p{font-family:"Fraunces",Georgia,serif;font-size:22px;color:var(--ink-soft)}
+.loadBox{width:min(320px,calc(100% - 32px));text-align:center}
+.loader p{margin:0 0 16px;font-family:"Fraunces",Georgia,serif;font-size:22px;color:var(--ink-soft)}
+.loadTrack{height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+.loadBar{width:0;height:100%;border-radius:2px;background:var(--ember);transition:width .3s ease-out}
+.loadPct{margin-top:10px;font-size:13px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
 .loader.gone{opacity:0;pointer-events:none}
-@media (prefers-reduced-motion: reduce){.hint,.loader{transition:none}}
+@media (prefers-reduced-motion: reduce){.hint,.loader,.loadBar{transition:none}}
