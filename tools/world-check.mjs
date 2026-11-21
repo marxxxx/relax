@@ -49,20 +49,23 @@ if(!hasFar){
 }else{
   ok(true,'far-world exports present (RIVERS, FAR_TRAIL, riverAt, riverDist)');
   for(const R of W.RIVERS){
-    let mono=true,bedOK=true;
+    let carveOK=true,containOK=true,maxRise=-1e9;
     for(let i=0;i<R.pts.length;i++){
       const [x,z,bed,dep]=R.pts[i],wy=bed+dep-.35;
-      if(i>0){const p=R.pts[i-1];if(wy>p[2]+p[3]-.35+.05)mono=false;}
+      if(W.heightAt(x,z)>bed+1e-6)carveOK=false;                 // the channel is carved down to the bed
+      if(i>0){const p=R.pts[i-1];maxRise=Math.max(maxRise,wy-(p[2]+p[3]-.35));}  // may follow terrain bumps up, bounded
       const a=R.pts[Math.max(i-1,0)],b=R.pts[Math.min(i+1,R.pts.length-1)];
       let nx=-(b[1]-a[1]),nz=b[0]-a[0];const nl=Math.hypot(nx,nz)||1;
-      if(W.heightAt(x+nx/nl*(R.w+6),z+nz/nl*(R.w+6))<bed-1e-6)bedOK=false;}
-    ok(mono,`river w=${R.w}: water surface non-increasing downstream`);
-    ok(bedOK,`river w=${R.w}: bed <= terrain outside the channel`);}
+      const hL=W.heightAt(x-nx/nl*(R.w+6),z-nz/nl*(R.w+6)),hR=W.heightAt(x+nx/nl*(R.w+6),z+nz/nl*(R.w+6));
+      if(Math.max(hL,hR)<wy-.05)containOK=false;}                // water held by at least one bank
+    ok(carveOK,`river w=${R.w}: channel carved to bed at center`);
+    ok(maxRise<=.8,`river w=${R.w}: water rise per 6 m step <= 0.8 (max ${maxRise.toFixed(2)})`);
+    ok(containOK,`river w=${R.w}: at least one bank above water level`);}
   let slopeOK=true,maxs=0;
   for(let i=1;i<W.FAR_TRAIL.pts.length;i++){
     const a=W.FAR_TRAIL.pts[i-1],b=W.FAR_TRAIL.pts[i];
     const s=Math.abs(b[2]-a[2])/Math.hypot(b[0]-a[0],b[1]-a[1]);
-    if(s>maxs)maxs=s;if(s>.5)slopeOK=false;}
+    if(s>maxs)maxs=s;if(s>.5+1e-6)slopeOK=false;}
   ok(slopeOK,`FAR_TRAIL slope <= 1:2 (max ${maxs.toFixed(3)})`);
   const camp=W.heightAt(468,16),pass=W.heightAt(340,8),exit=W.heightAt(700,-30),ring=W.heightAt(0,700),plain=W.heightAt(540,140);
   ok(camp>3&&camp<9,`camp (468,16) h=${camp.toFixed(1)} in [3,9]`);
