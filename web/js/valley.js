@@ -32,7 +32,7 @@ function yurt(x,z){
   add(new THREE.CylinderGeometry(3,3,2.2,24,1,true),yurtWallMat,0,1.1,0,g);       // lattice wall
   add(new THREE.ConeGeometry(3.7,2.4,24,1,true),yurtRoofMat,0,3.4,0,g);            // felt roof
   add(new THREE.CylinderGeometry(.34,.34,.55,12),std(0x8a6f4d),0,4.75,0,g);         // crown ring (toono)
-  add(new THREE.BoxGeometry(.95,1.75,.09),std(0x5a3d24),0,.88,2.99,g);             // door
+  add(new THREE.BoxGeometry(.95,1.75,.09),std(0x5a3d24),0,.88,3.03,g);             // door
   CIRCLES.push([x,z,3.3]);
   return {g,x,y,z};}
 const yurts=[];
