@@ -2,13 +2,13 @@
 import {$,clamp,lerp,smooth} from './util.js';
 import {canvas,camera} from './renderer.js';
 import {heightAt,SEA} from './world.js';
-import {blocked,tooSteep,floorAt,isInside} from './collision.js';
+import {blocked,tooSteep,floorAt,isInside,WALK_R} from './collision.js';
 import {state,cur} from './state.js';
 import {setPanel} from './ui.js';
 
 // ---------- camera control ----------
 export const target=new THREE.Vector3(2,4.6,2.5);
-const HOME=target.clone(),HOFF=HOME.y-heightAt(HOME.x,HOME.z),tTgt=HOME.clone(),PANR=300;
+const HOME=target.clone(),HOFF=HOME.y-heightAt(HOME.x,HOME.z),tTgt=HOME.clone(),PANR=700;
 let az=.95,pol=1.5,dist=25,tAz=az,tPol=pol,tDist=dist,idle=0,lastTap=0;
 const pointers=new Map();let pinch0=0,dist0=0;
 export const player={x:0,z:8.5,y:0,yaw:0,pitch:-.05,bob:0};
@@ -16,7 +16,7 @@ export const player={x:0,z:8.5,y:0,yaw:0,pitch:-.05,bob:0};
 const drop={on:false,t:0,dur:1,from:new THREE.Vector3(),to:new THREE.Vector3(),yaw0:0,pitch0:0};
 // nearest walkable spot to a panned-to position (out of the lake, off trees/rocks, not in the sea, inside the walk radius)
 function findGround(x,z){
-  const r=Math.hypot(x,z);if(r>300){x*=300/r;z*=300/r;}
+  const r=Math.hypot(x,z);if(r>WALK_R){x*=WALK_R/r;z*=WALK_R/r;}
   const ok=(x,z)=>{const y=floorAt(x,z);return heightAt(x,z)>SEA+.25&&!blocked(x,z,y);};
   if(ok(x,z))return[x,z];
   for(let ring=1;ring<=14;ring++){const rr=ring*1.5;
