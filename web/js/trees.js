@@ -34,6 +34,7 @@ const crownMat=weatherize(std(0xffffff,{flatShading:true,roughness:.95}),'tree',
   float w=sin(uTime*2.1+ip.x*.31+ip.y*.17)*.6+sin(uTime*3.7+ip.y*.43)*.4;
   transformed.x+=(0.05+uWind*0.38)*bend*(.55+.45*gust)+w*uWind*0.12*bend;
   transformed.z+=sin(uTime*1.7+ip.x*.21)*0.05*bend*(.3+uWind);`);
+export const treeCrown=crown,treeTrunk=trunk,treeCrownMat=crownMat;   // reused for the plain trees in valley.js
 const crowns=new THREE.InstancedMesh(crown,crownMat,spots.length);
 const trunks=new THREE.InstancedMesh(trunk,std(0x4d3624),spots.length);
 const M=new THREE.Matrix4(),Q=new THREE.Quaternion(),S=new THREE.Vector3(),P=new THREE.Vector3(),UP=new THREE.Vector3(0,1,0);
