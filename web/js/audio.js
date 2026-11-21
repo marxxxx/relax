@@ -1,5 +1,5 @@
 import {$,clamp} from './util.js';
-import {FIRE,coastEdge} from './world.js';
+import {FIRE,coastEdge,riverDist} from './world.js';
 import {camera} from './renderer.js';
 import {hearthLight} from './interior.js';
 import {state,cur} from './state.js';
@@ -22,7 +22,10 @@ function initAudio(){
   const tr=AC.createOscillator();tr.type='square';tr.frequency.value=28;const trG=AC.createGain();trG.gain.value=.5;tr.connect(trG);trG.connect(am.gain);tr.start();
   const surfG=gain(0,master);const sf=filt('lowpass',700,.5,surfG);const sAm=gain(.55,sf);loop(brown).connect(sAm);
   const swell=AC.createOscillator();swell.frequency.value=.09;const swG=AC.createGain();swG.gain.value=.45;swell.connect(swG);swG.connect(sAm.gain);swell.start();
-  A={master,windG,rainG,cricketG,white,brown,rl,wf,surfG,acc:0};
+  const riverG=gain(0,master);const rb=filt('bandpass',900,.45,riverG);loop(white).connect(rb);   // river murmur
+  const rlo=filt('lowpass',260,.6,riverG);loop(brown).connect(rlo);
+  const gurgle=AC.createOscillator();gurgle.frequency.value=.37;const guG=AC.createGain();guG.gain.value=260;gurgle.connect(guG);guG.connect(rb.frequency);gurgle.start();
+  A={master,windG,rainG,cricketG,white,brown,rl,wf,surfG,riverG,acc:0};
 }
 function crackle(vol){if(!A||vol<.02)return;const s=AC.createBufferSource();s.buffer=A.white;
   const bp=AC.createBiquadFilter();bp.type='bandpass';bp.frequency.value=1200+Math.random()*2500;bp.Q.value=1.4;
@@ -48,6 +51,7 @@ export function updateAudio(dt,env){
     if(A.acc>.2){A.acc=0;const t=AC.currentTime;
       A.windG.gain.setTargetAtTime((.08+cur.wind*.35)*(1-state.indoor*.6),t,.6);
       A.rainG.gain.setTargetAtTime(cur.rain*.32*(1-state.indoor*.35),t,.6);{const cd=camera.position.x-coastEdge(camera.position.z);A.surfG.gain.setTargetAtTime(clamp(1-(cd+14)/110,0,1)*(.18+cur.wind*.3)*(1-state.indoor*.7),t,.8);}A.rl.frequency.setTargetAtTime(6500-state.indoor*5000,t,.5);
+      {const rd=riverDist(camera.position.x,camera.position.z),k=clamp(1-(rd-4)/80,0,1);A.riverG.gain.setTargetAtTime(k*k*.3*(1-state.indoor*.7),t,.8);}
       A.cricketG.gain.setTargetAtTime(night*(1-cl*.7)*(1-cur.rain)*(1-cur.snow)*.012,t,1);}
     const fd=camera.position.distanceTo(FIRE),fv=Math.max(clamp(1-fd/45,0,1)*.22*fireScale*(1-state.indoor*.8),clamp(1-camera.position.distanceTo(hearthLight.position)/12,0,1)*.2);
     if(Math.random()<dt*9)crackle(fv);

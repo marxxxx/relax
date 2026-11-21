@@ -13,7 +13,7 @@ export function blocked(x,z,y=0){
   if(Math.hypot(x-LAKE.x,z-LAKE.z)<LAKE.r*1.02)return true;
   if(Math.hypot(x,z)>WALK_R)return true;
   if(x<-40&&heightAt(x,z)<SEA+.25)return true;   // the sea
-  const [rd,rw,dep]=riverAt(x,z);if(dep>.45&&rd<3.2)return true;   // rivers block, except the shallow ford
+  {const [rd,rw,,rwd]=riverAt(x,z);if(rd<rwd+1&&rw-heightAt(x,z)>.5)return true;}   // deep river water blocks; the shallow ford can be waded
   return false;}
 // cliffs and ravine walls are too steep to walk
 export function tooSteep(x0,z0,x1,z1,y=0){

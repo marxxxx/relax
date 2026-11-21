@@ -84,3 +84,21 @@ rocks, cairns, `updateValley(dt,env)`) imported last in `main.js`, called after
 ## Calls made
 East pass (not north); ford instead of bridge; one extra point light at the camp fire;
 smoke/flame via effects registry; WebGL1 fallback may fog the plain heavily (accepted).
+
+## Revision: realistic rivers (supersedes the river parts above)
+- Course: Catmull-Rom through the control points with an alternating meander bend inserted between
+  each pair (none within ~100 m of the camp); main river now passes the camp ~44 m to the east,
+  outside the fence; ford at (524,7). Widths 6.5/4.2/3.6 (±20 % noise, narrow at the source, ford ×1.3).
+- Water level: non-increasing least-squares fit (pool adjacent violators, min slope 0.0006) to the
+  ground along the river, capped by the lowest nearby ground and smoothed; tributaries end at the
+  main river's level. Points `[x,z,water,depth,halfWidth,arcLength,bankHeight]`.
+- `heightAt` → `riverShape`: rounded bed, 2.5 m banks to `water+bankHeight`, gently rising
+  floodplain, valley sides blending back to the land (width ∝ height difference). Rivers may lower
+  or raise the ground; raising is suppressed near another river's channel, lowering wins.
+- `riverAt(x,z) -> [dist, waterY, depth, halfWidth]`, `riverNear(x,z,R,maxD)`; collision blocks
+  where the local water depth > 0.5 m (the ford can be waded).
+- Water: per-river ribbon in river space (s,l) with a custom shader — flow-advected anisotropic
+  ripples (two-phase), depth-based transparency (premultiplied alpha), sky + mirrored-bank
+  reflection, sun glints, white water by slope/shallowness, rain rings; confluences cross-fade.
+- Banks: instanced boulders, pebbles/gravel bars, reed beds (own PRNG, shared `rnd()` untouched);
+  river sound in `audio.js` by distance.

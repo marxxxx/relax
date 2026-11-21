@@ -48,19 +48,24 @@ if(!hasFar){
   else console.log('SKIP structural checks (RIVERS/FAR_TRAIL/riverAt not exported yet)');
 }else{
   ok(true,'far-world exports present (RIVERS, FAR_TRAIL, riverAt, riverDist)');
+  // pts: [x,z,water level,depth,half-width,arc length,bank height]
   for(const R of W.RIVERS){
-    let carveOK=true,containOK=true,maxRise=-1e9;
+    let carveOK=true,maxRise=-1e9,noBank=0;
     for(let i=0;i<R.pts.length;i++){
-      const [x,z,bed,dep]=R.pts[i],wy=bed+dep-.35;
-      if(W.heightAt(x,z)>bed+1e-6)carveOK=false;                 // the channel is carved down to the bed
-      if(i>0){const p=R.pts[i-1];maxRise=Math.max(maxRise,wy-(p[2]+p[3]-.35));}  // may follow terrain bumps up, bounded
+      const [x,z,wl,D,w]=R.pts[i];
+      if(W.heightAt(x,z)>wl-D*.5)carveOK=false;                    // the channel is carved below the water
+      if(i>0)maxRise=Math.max(maxRise,wl-R.pts[i-1][2]);           // water only ever runs downhill
+      if(i%2)continue;
+      let near=false;for(const O of W.RIVERS)if(O!==R&&W.riverNear(x,z,O,O.w*2+25))near=true;   // confluence mouths stay open
+      if(near)continue;
       const a=R.pts[Math.max(i-1,0)],b=R.pts[Math.min(i+1,R.pts.length-1)];
-      let nx=-(b[1]-a[1]),nz=b[0]-a[0];const nl=Math.hypot(nx,nz)||1;
-      const hL=W.heightAt(x-nx/nl*(R.w+6),z-nz/nl*(R.w+6)),hR=W.heightAt(x+nx/nl*(R.w+6),z+nz/nl*(R.w+6));
-      if(Math.max(hL,hR)<wy-.05)containOK=false;}                // water held by at least one bank
-    ok(carveOK,`river w=${R.w}: channel carved to bed at center`);
-    ok(maxRise<=.8,`river w=${R.w}: water rise per 6 m step <= 0.8 (max ${maxRise.toFixed(2)})`);
-    ok(containOK,`river w=${R.w}: at least one bank above water level`);}
+      let nx=-(b[1]-a[1]),nz=b[0]-a[0];const nl=Math.hypot(nx,nz)||1;nx/=nl;nz/=nl;
+      for(const s of [-1,1]){let found=false;
+        for(let d=0;d<=w+4;d+=0.25)if(W.heightAt(x+nx*s*d,z+nz*s*d)>=wl+.05){found=true;break;}
+        if(!found)noBank++;}}
+    ok(carveOK,`river w=${R.w}: channel carved below the water at the centerline`);
+    ok(maxRise<=0,`river w=${R.w}: water level never rises downstream (max step ${maxRise.toFixed(4)})`);
+    ok(noBank===0,`river w=${R.w}: both banks rise above the water within w+4 (missing: ${noBank})`);}
   let slopeOK=true,maxs=0;
   for(let i=1;i<W.FAR_TRAIL.pts.length;i++){
     const a=W.FAR_TRAIL.pts[i-1],b=W.FAR_TRAIL.pts[i];
@@ -86,9 +91,13 @@ if(!hasFar){
   ok(exit>W.SEA+1,`river exit (700,-30) h=${exit.toFixed(1)} > SEA+1`);
   ok(ring>20,`outer ring (0,700) h=${ring.toFixed(1)} > 20`);
   ok(plain>3&&plain<10,`plain (540,140) h=${plain.toFixed(1)} in [3,10]`);
-  const [fd,fw,fdep]=W.riverAt(482,22);
-  ok(fdep<=.4,`ford at (482,22) depth=${fdep.toFixed(2)} <= .4 (dist ${fd.toFixed(1)})`);
-  ok(W.riverDist(470,16)<20,`river near camp: riverDist(470,16)=${W.riverDist(470,16).toFixed(1)}`);
+  const [fd,fw,fdep]=W.riverAt(524,7);
+  ok(fdep<=.4&&fd<3,`ford at (524,7) depth=${fdep.toFixed(2)} <= .4 (dist ${fd.toFixed(1)})`);
+  const cd=W.riverDist(468,16);
+  ok(cd>36&&cd<60,`river passes the camp outside its fence: riverDist(468,16)=${cd.toFixed(1)}`);
+  // tributaries end at the main river's water level
+  for(const R of W.RIVERS.slice(1)){const e=R.pts[R.pts.length-1],q=W.riverNear(e[0],e[1],W.RIVERS[0],5);
+    ok(q&&Math.abs(q[1]-e[2])<.02,`tributary w=${R.w} joins at the main river's level (${e[2].toFixed(2)} vs ${q?q[1].toFixed(2):'-'})`);}
 }
 console.log(fails?`${fails} FAILURES`:'ALL OK');
 process.exit(fails?1:0);
