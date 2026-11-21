@@ -9,34 +9,36 @@ const bar=$('loadBar'),pct=$('loadPct');
 const setLoad=f=>{const p=Math.round(clamp(f,0,1)*100);bar.style.width=p+'%';pct.textContent=p+' %';$('loadTrack').setAttribute('aria-valuenow',p);};
 const paint=()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,0)));   // let the browser draw the bar before the next chunk of work
 let done=0;
+// on Pages, build-site.sh appends ?v=<sha> to static imports; dynamic ones must carry the same query, or each module loads twice
+const V=new URL(import.meta.url).search,load=p=>import(p+V);
 async function step(w,fn){const r=await fn();done+=w;setLoad(done/100);await paint();return r;}
 setLoad(0);await paint();
 
 // [weight, import] — weights ≈ measured share of the load time; all steps sum to 100
-const R=await step(6,()=>import('./renderer.js'));
-const MA=await step(.5,()=>import('./materials.js'));
-await step(.5,()=>import('./sky.js'));
-await step(.5,()=>import('./lights.js'));
-await step(40,()=>import('./terrain.js'));
-await step(.5,()=>import('./cabin.js'));
-await step(.5,()=>import('./interior.js'));
-await step(.5,()=>import('./upstairs.js'));
-await step(.5,()=>import('./campfire.js'));
-const EF=await step(.5,()=>import('./effects.js'));
-await step(.5,()=>import('./trees.js'));
-await step(1,()=>import('./props.js'));
-const SE=await step(.5,()=>import('./sea.js'));
-await step(5,()=>import('./grass.js'));
-const PR=await step(.5,()=>import('./precipitation.js'));
-const WE=await step(.5,()=>import('./weather.js'));
-const EN=await step(.5,()=>import('./environment.js'));
-const CO=await step(.5,()=>import('./controls.js'));
-const AU=await step(.5,()=>import('./audio.js'));
-const UI=await step(.5,()=>import('./ui.js'));
-const PO=await step(.5,()=>import('./post.js'));
-const ST=await step(.5,()=>import('./state.js'));
-const AN=await step(1,()=>import('./animals.js'));
-const VA=await step(15,()=>import('./valley.js'));   // LAST on purpose: keeps the seeded rnd() layout of the world above unchanged
+const R=await step(6,()=>load('./renderer.js'));
+const MA=await step(.5,()=>load('./materials.js'));
+await step(.5,()=>load('./sky.js'));
+await step(.5,()=>load('./lights.js'));
+await step(40,()=>load('./terrain.js'));
+await step(.5,()=>load('./cabin.js'));
+await step(.5,()=>load('./interior.js'));
+await step(.5,()=>load('./upstairs.js'));
+await step(.5,()=>load('./campfire.js'));
+const EF=await step(.5,()=>load('./effects.js'));
+await step(.5,()=>load('./trees.js'));
+await step(1,()=>load('./props.js'));
+const SE=await step(.5,()=>load('./sea.js'));
+await step(5,()=>load('./grass.js'));
+const PR=await step(.5,()=>load('./precipitation.js'));
+const WE=await step(.5,()=>load('./weather.js'));
+const EN=await step(.5,()=>load('./environment.js'));
+const CO=await step(.5,()=>load('./controls.js'));
+const AU=await step(.5,()=>load('./audio.js'));
+const UI=await step(.5,()=>load('./ui.js'));
+const PO=await step(.5,()=>load('./post.js'));
+const ST=await step(.5,()=>load('./state.js'));
+const AN=await step(1,()=>load('./animals.js'));
+const VA=await step(15,()=>load('./valley.js'));   // LAST on purpose: keeps the seeded rnd() layout of the world above unchanged
 const {camera,renderer,scene}=R,{WU}=MA,{state,SPEEDS}=ST,{player,setMode}=CO,{animals}=AN;
 
 // ---------- main loop ----------

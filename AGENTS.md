@@ -16,7 +16,7 @@ There is no build step, package manager, linter or test suite. Everything that s
 
 ## Deployment
 
-`.github/workflows/deploy.yml` publishes only `web/` to GitHub Pages on every push to `main`. It cache-busts by appending `?v=<short sha>` to local `.css`/`.js` references in HTML and to relative imports in JS via `sed`. Keep imports in the form `from './x.js'` / `import './x.js'` / `import('./x.js')` (single quotes, relative path, `.js` extension) so the regex matches them. `index.html` lists every module as `<link rel="modulepreload">` so they fetch in parallel — add new modules there too.
+`.github/workflows/deploy.yml` publishes only `web/` to GitHub Pages on every push to `main`. It cache-busts by appending `?v=<short sha>` to local `.css`/`.js` references in HTML and to relative imports in JS via `sed`. Keep imports in the form `from './x.js'` / `import './x.js'` (single quotes, relative path, `.js` extension) so the regex matches them. The regex does not touch dynamic `import()`: `main.js` loads modules via `load('./x.js')`, which appends its own `?v=` query (from `import.meta.url`) — a module imported once with and once without `?v` is evaluated twice. Staging builds of every branch use `main`'s `build-site.sh`. `index.html` lists every module as `<link rel="modulepreload">` so they fetch in parallel — add new modules there too.
 
 ## Architecture
 

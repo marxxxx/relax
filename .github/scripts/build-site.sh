@@ -18,7 +18,7 @@ export_web() {
   find "$dir" -name '*.html' -exec sed -i -E \
     "s#((href|src)=\"[^\":?]+\.(css|js))\"#\1?v=${version}\"#g" {} +
   find "$dir" -name '*.js' -exec sed -i -E \
-    "s#((from |import |import\()'\.\.?/[^'?]+\.js)'#\1?v=${version}'#g" {} +
+    "s#((from|import) '\.\.?/[^'?]+\.js)'#\1?v=${version}'#g" {} +
 }
 
 export_web HEAD "$out"
