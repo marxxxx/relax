@@ -1,17 +1,28 @@
 // Camera control: orbit view (drag / pinch / wheel) and first-person walking (keys / joystick).
-import {$,clamp} from './util.js';
+import {$,clamp,lerp,smooth} from './util.js';
 import {canvas,camera} from './renderer.js';
 import {heightAt,SEA} from './world.js';
-import {blocked,tooSteep,floorAt,isInside} from './collision.js';
+import {blocked,tooSteep,floorAt,isInside,WALK_R} from './collision.js';
 import {state,cur} from './state.js';
 import {setPanel} from './ui.js';
 
 // ---------- camera control ----------
 export const target=new THREE.Vector3(2,4.6,2.5);
-const HOME=target.clone(),HOFF=HOME.y-heightAt(HOME.x,HOME.z),tTgt=HOME.clone(),PANR=200;
+const HOME=target.clone(),HOFF=HOME.y-heightAt(HOME.x,HOME.z),tTgt=HOME.clone(),PANR=700;
 let az=.95,pol=1.5,dist=25,tAz=az,tPol=pol,tDist=dist,idle=0,lastTap=0;
 const pointers=new Map();let pinch0=0,dist0=0;
 export const player={x:0,z:8.5,y:0,yaw:0,pitch:-.05,bob:0};
+// transition when entering fp from the orbit view: the camera drops from its current position to eye level
+const drop={on:false,t:0,dur:1,from:new THREE.Vector3(),to:new THREE.Vector3(),yaw0:0,pitch0:0};
+// nearest walkable spot to a panned-to position (out of the lake, off trees/rocks, not in the sea, inside the walk radius)
+function findGround(x,z){
+  const r=Math.hypot(x,z);if(r>WALK_R){x*=WALK_R/r;z*=WALK_R/r;}
+  const ok=(x,z)=>{const y=floorAt(x,z);return heightAt(x,z)>SEA+.25&&!blocked(x,z,y);};
+  if(ok(x,z))return[x,z];
+  for(let ring=1;ring<=14;ring++){const rr=ring*1.5;
+    for(let k=0;k<8*ring;k++){const a=k/(8*ring)*6.283,xx=x+Math.cos(a)*rr,zz=z+Math.sin(a)*rr;
+      if(ok(xx,zz))return[xx,zz];}}
+  return[0,8.5];}
 const camP=new THREE.Vector3();
 const keys={};let joyX=0,joyY=0;
 // ride input: drag turns the animal (turn, consumed by animals.js) and tilts the view / flight pitch; tap = jump
@@ -66,18 +77,26 @@ joy.addEventListener('pointerup',joyEnd);joy.addEventListener('pointercancel',jo
 const touchUI=matchMedia('(pointer:coarse)').matches;
 let panelWasMin=false;
 export function setMode(m){
-  const bc=document.body.classList;
-  if(m==='fp'&&state.mode!=='fp'){panelWasMin=bc.contains('panelMin');setPanel(true);}   // walking/riding: fold the panel away, restore it on return
-  else if(m!=='fp'&&state.mode==='fp')setPanel(panelWasMin);
+  const prev=state.mode,bc=document.body.classList;
+  if(m==='fp'&&prev!=='fp'){panelWasMin=bc.contains('panelMin');setPanel(true);}   // walking/riding: fold the panel away, restore it on return
+  else if(m!=='fp'&&prev==='fp')setPanel(panelWasMin);
   state.mode=m;document.body.classList.toggle('fp',m==='fp');
-  $('modeBtn').textContent=m==='fp'?'Rundblick':'Hineingehen';
+  $('modeBtn').textContent=m==='fp'?'Rundblick':'First-Person';
   $('modeBtn').setAttribute('aria-pressed',m==='fp');
-  if(m==='fp'){state.rider=null;state.watch=null;player.x=0;player.z=8.5;player.yaw=0;player.pitch=-.05;player.y=floorAt(0,8.5);camera.near=.05;
-    const h=$('hint');h.textContent=touchUI?'Links mit dem Joystick gehen, rechts ziehen zum Umsehen':'W A S D zum Gehen, Shift zum Laufen, Ziehen zum Umsehen';h.classList.remove('gone');setTimeout(hideHint,7000);}
+  if(m==='fp'){state.rider=null;state.watch=null;
+    // start where the orbit view is currently looking (panned/zoomed position), else at the porch
+    const g=prev==='orbit'?findGround(tTgt.x,tTgt.z):[0,8.5];
+    player.x=g[0];player.z=g[1];player.y=floorAt(player.x,player.z);
+    const e=new THREE.Euler().setFromQuaternion(camera.quaternion,'YXZ');   // keep looking the same way while dropping down
+    player.yaw=e.y;player.pitch=clamp(e.x,-.85,.35);
+    drop.from.copy(camera.position);drop.to.set(player.x,player.y+1.62,player.z);
+    drop.yaw0=e.y;drop.pitch0=e.x;drop.t=0;drop.dur=clamp(drop.from.distanceTo(drop.to)/70,.7,1.6);drop.on=true;
+    camera.near=.05;
+    const h=$('hint');h.textContent=touchUI?'Links mit dem Joystick gehen, rechts ziehen zum Umsehen – die Steinmänner weisen zu den Gipfeln':'W A S D zum Gehen, Shift zum Laufen, Ziehen zum Umsehen – die Steinmänner weisen zu den Gipfeln';h.classList.remove('gone');setTimeout(hideHint,7000);}
   else{camera.near=.1;
     if(state.rider){state.watch=state.rider;state.rider=null;const p=state.watch.g.position;   // leave ride view: orbit keeps watching the animal
       tTgt.set(p.x,state.watch.x!==undefined?p.y+.8:p.y,p.z);tDist=clamp(tDist,3,10);}
-    else if(!state.watch){target.copy(HOME);tTgt.copy(HOME);}}
+    else if(!state.watch){tTgt.set(player.x,Math.max(heightAt(player.x,player.z),SEA)+HOFF,player.z);target.copy(tTgt);}}   // leave fp where you stand
   camera.updateProjectionMatrix();}
 $('modeBtn').addEventListener('click',()=>setMode(state.mode==='fp'?'orbit':'fp'));
 
@@ -101,12 +120,21 @@ export function updateCamera(dt){
     const sy_=Math.sin(player.yaw),cy=Math.cos(player.yaw);
     const mx=(-sy_*f+cy*r)*sp,mz=(-cy*f-sy_*r)*sp;
     const py=player.y;
-    if(!blocked(player.x+mx,player.z,py)&&!tooSteep(player.x,player.z,player.x+mx,player.z,py))player.x+=mx;
-    if(!blocked(player.x,player.z+mz,py)&&!tooSteep(player.x,player.z,player.x,player.z+mz,py))player.z+=mz;
-    const moving=Math.hypot(mx,mz)>1e-4;if(moving)player.bob+=Math.hypot(mx,mz)*3.2;
+    if(!drop.on&&!blocked(player.x+mx,player.z,py)&&!tooSteep(player.x,player.z,player.x+mx,player.z,py))player.x+=mx;
+    if(!drop.on&&!blocked(player.x,player.z+mz,py)&&!tooSteep(player.x,player.z,player.x,player.z+mz,py))player.z+=mz;
+    const moving=!drop.on&&Math.hypot(mx,mz)>1e-4;if(moving)player.bob+=Math.hypot(mx,mz)*3.2;
     const fy=floorAt(player.x,player.z,player.y);player.y+=(fy-player.y)*Math.min(1,dt*12);
-    camera.rotation.order='YXZ';camera.rotation.set(player.pitch,player.yaw,0);
-    camera.position.set(player.x,player.y+1.62+Math.sin(player.bob)*.03*(moving?1:0),player.z);
+    if(drop.on){   // camera falls from the orbit position down to eye level, then walking starts
+      drop.t=Math.min(1,drop.t+dt/drop.dur);
+      const e=smooth(0,1,drop.t);
+      drop.to.set(player.x,player.y+1.62,player.z);
+      camera.position.lerpVectors(drop.from,drop.to,e);
+      camera.rotation.order='YXZ';
+      camera.rotation.set(lerp(drop.pitch0,player.pitch,e),lerp(drop.yaw0,player.yaw,e),0);
+      if(drop.t>=1)drop.on=false;
+    }else{
+      camera.rotation.order='YXZ';camera.rotation.set(player.pitch,player.yaw,0);
+      camera.position.set(player.x,player.y+1.62+Math.sin(player.bob)*.03*(moving?1:0),player.z);}
     camera.position.x+=Math.sin(state.T*7.1)*g*.035;camera.position.y+=Math.sin(state.T*11.3+1.7)*g*.022;
     camera.rotation.z=Math.sin(state.T*5.9)*g*.014;
     target.set(player.x,player.y+1.6,player.z);

@@ -1,17 +1,18 @@
 import {isMobile,smooth,fbm,distSeg} from './util.js';
-import {LAKE,FIRE,SEA,coastEdge,heightAt,pathDist} from './world.js';
+import {LAKE,FIRE,SEA,coastEdge,heightAt,pathDist,riverAt} from './world.js';
 import {scene} from './renderer.js';
 import {weatherize} from './materials.js';
 
 // ---------- terrain ----------
-const TS=640,TSEG=isMobile?200:290;
+const TS=1600,TSEG=isMobile?240:580;   // big enough to hold the far plain and the outer ring
 const tg=new THREE.PlaneGeometry(TS,TS,TSEG,TSEG);tg.rotateX(-Math.PI/2);
 const tp=tg.attributes.position;
 for(let i=0;i<tp.count;i++){tp.setY(i,heightAt(tp.getX(i),tp.getZ(i)));}
 tg.computeVertexNormals();
 const tcol=new Float32Array(tp.count*3);const c=new THREE.Color(),c2=new THREE.Color();
 const G1=new THREE.Color(0x4f7233),G2=new THREE.Color(0x7c9a45),MEAD=new THREE.Color(0x8fae52),
-  DIRT=new THREE.Color(0x7a6446),ROCK=new THREE.Color(0x77706a),SNOWC=new THREE.Color(0xe7edf2),SAND=new THREE.Color(0x9a8664),CLIFF2=new THREE.Color(0x8a6e58),WETSAND=new THREE.Color(0x6f5f45);
+  DIRT=new THREE.Color(0x7a6446),ROCK=new THREE.Color(0x77706a),SNOWC=new THREE.Color(0xe7edf2),SAND=new THREE.Color(0x9a8664),CLIFF2=new THREE.Color(0x8a6e58),WETSAND=new THREE.Color(0x6f5f45),
+  GRAVEL=new THREE.Color(0x6e6452),PEBBLE=new THREE.Color(0x8d8576),DEEPBED=new THREE.Color(0x3a3d2c),WETB=new THREE.Color(0x4e4433),LUSH=new THREE.Color(0x3f6a2a);
 for(let i=0;i<tp.count;i++){
   const x=tp.getX(i),z=tp.getZ(i),y=tp.getY(i),ny=tg.attributes.normal.getY(i);
   const r=Math.hypot(x,z),n=fbm(x*.05,z*.05);
@@ -23,11 +24,19 @@ for(let i=0;i<tp.count;i++){
   c.lerp(ROCK,smooth(.82,.62,ny)*smooth(5,12,y));
   const steep=smooth(.72,.5,ny);
   c.lerp(c2.copy(ROCK).multiplyScalar(.75+.5*fbm(x*.15+y*.4,z*.15)).lerp(CLIFF2,smooth(.4,.7,fbm(y*.35,x*.05+z*.05))*.5),steep*.92);
-  const sd=pathDist(x,z);c.lerp(DIRT,(1-smooth(.8,2.0,sd))*.8*(y>SEA+2?1:.3));
+  const sd=pathDist(x,z);c.lerp(DIRT,(1-smooth(1.1,3.0,sd))*.85*(y>SEA+2?1:.3));
   const dxc=x-coastEdge(z);
   if(dxc<-4){const sandW=smooth(SEA+3.5,SEA+1.5,y);c.lerp(SAND,sandW*smooth(.6,.8,ny));c.lerp(WETSAND,smooth(SEA+.8,SEA-.2,y));}
   c.lerp(ROCK,smooth(18,32,y)*.7);
   c.lerp(SNOWC,smooth(34,50,y+n*10));
+  c.lerp(DIRT,(1-smooth(1.2,3.2,sd))*.4*smooth(22,40,y));   // the paths stay visible as gravel strips in rock and snow
+  const [rd,rw,,rwd]=riverAt(x,z);
+  if(rd<rwd+40){const up=y-rw,gv=fbm(x*.45+3,z*.45);
+    if(up<0)c.copy(GRAVEL).lerp(PEBBLE,smooth(.45,.75,gv)*(1-smooth(.2,.9,-up))).lerp(DEEPBED,smooth(.25,1.5,-up));   // river bed: gravel, darker and greener with depth
+    else{c.lerp(LUSH,(1-smooth(rwd+5,rwd+32,rd))*.5);                       // lusher floodplain
+      c.lerp(DIRT,smooth(.93,.75,ny)*(1-smooth(rwd+3,rwd+7,rd))*.85);      // cut banks show bare earth
+      c.lerp(PEBBLE,smooth(.5,.7,gv)*(1-smooth(.2,.6,up))*.8);             // gravel at the waterline
+      c.lerp(WETB,(1-smooth(.04,.4,up))*.8);}}                             // wet band
   const lr=Math.hypot(x-LAKE.x,z-LAKE.z);
   c.lerp(SAND,(1-smooth(LAKE.r*.95,LAKE.r*1.35,lr))*.75);
   tcol[i*3]=c.r;tcol[i*3+1]=c.g;tcol[i*3+2]=c.b;

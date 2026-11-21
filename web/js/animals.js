@@ -3,7 +3,7 @@
 // evaluated — imported last in main.js, so the seeded rnd() sequence of the world stays intact.
 import {$,isMobile,rnd,lerp,smooth} from './util.js';
 import {LAKE,SEA,FIRE,coastEdge,heightAt} from './world.js';
-import {CIRCLES} from './collision.js';
+import {CIRCLES,WALK_R} from './collision.js';
 import {scene} from './renderer.js';
 import {std,weatherize} from './materials.js';
 import {state,cur} from './state.js';
@@ -166,8 +166,8 @@ function rideFly(b,dt,inp){
   b.spd=lerp(b.spd||4,(4+inp.f*3)*(inp.run?1.7:1),Math.min(1,dt*2));
   const pt=rideCtl.pitch,hz=b.spd*Math.cos(pt);
   p.x+=Math.sin(h)*hz*dt;p.z+=Math.cos(h)*hz*dt;p.y+=(b.spd*Math.sin(pt)+inp.up*3)*dt;
-  const r=Math.hypot(p.x,p.z);if(r>230){p.x*=230/r;p.z*=230/r;}
-  const lo=Math.max(heightAt(p.x,p.z),SEA)+.8;if(p.y<lo){p.y=lo;if(pt<0)rideCtl.pitch=lerp(pt,0,Math.min(1,dt*4));}p.y=Math.min(p.y,70);
+  const r=Math.hypot(p.x,p.z);if(r>WALK_R){p.x*=WALK_R/r;p.z*=WALK_R/r;}   // the whole mountain ring and the far plain are open to fly over
+  const lo=Math.max(heightAt(p.x,p.z),SEA)+.8;if(p.y<lo){p.y=lo;if(pt<0)rideCtl.pitch=lerp(pt,0,Math.min(1,dt*4));}p.y=Math.min(p.y,85);
   b.g.rotation.x=lerp(b.g.rotation.x,-pt*.7,Math.min(1,dt*5));
   b.g.rotation.z=lerp(b.g.rotation.z,inp.r*.45,Math.min(1,dt*4));
   const flap=inp.f>0||inp.up>0||pt>.15;b.fp=(b.fp||0)+dt*(flap?13:9);const fl=Math.sin(b.fp)*(flap?.75:.18);

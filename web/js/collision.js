@@ -1,17 +1,19 @@
-import {LAKE,SEA,heightAt} from './world.js';
+import {LAKE,SEA,heightAt,riverAt} from './world.js';
 import {HX,HZ,GF,UF,STAIR,BALC,stairH} from './house.js';
 
 // colliders for walking: boxes [minX,maxX,minZ,maxZ,minY?,maxY?] and circles [x,z,r]; a box with a
 // y-range only blocks when the player's body [y+.1,y+1.75] overlaps it (so each storey has its own)
 export const BOXES=[],CIRCLES=[];
+export const WALK_R=735;   // walkable out to the outer ring — the far plain and the pass included
 const PR=.28;
 BOXES.push([STAIR.x0,STAIR.x1,STAIR.z1-.05,STAIR.z1+.05,0,3]);   // stair railing, ground floor: enter from the west end only
 export function blocked(x,z,y=0){
   for(const b of BOXES)if(x>b[0]-PR&&x<b[1]+PR&&z>b[2]-PR&&z<b[3]+PR&&(b[4]===undefined||(y+1.75>b[4]&&y+.1<b[5])))return true;
   for(const c of CIRCLES){const dx=x-c[0],dz=z-c[1],r=c[2]+PR;if(dx*dx+dz*dz<r*r)return true;}
   if(Math.hypot(x-LAKE.x,z-LAKE.z)<LAKE.r*1.02)return true;
-  if(Math.hypot(x,z)>120)return true;
+  if(Math.hypot(x,z)>WALK_R)return true;
   if(x<-40&&heightAt(x,z)<SEA+.25)return true;   // the sea
+  {const [rd,rw,,rwd]=riverAt(x,z);if(rd<rwd+1&&rw-heightAt(x,z)>.5)return true;}   // deep river water blocks; the shallow ford can be waded
   return false;}
 // cliffs and ravine walls are too steep to walk
 export function tooSteep(x0,z0,x1,z1,y=0){

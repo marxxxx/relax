@@ -34,13 +34,14 @@ const crownMat=weatherize(std(0xffffff,{flatShading:true,roughness:.95}),'tree',
   float w=sin(uTime*2.1+ip.x*.31+ip.y*.17)*.6+sin(uTime*3.7+ip.y*.43)*.4;
   transformed.x+=(0.05+uWind*0.38)*bend*(.55+.45*gust)+w*uWind*0.12*bend;
   transformed.z+=sin(uTime*1.7+ip.x*.21)*0.05*bend*(.3+uWind);`);
+export const treeCrown=crown,treeTrunk=trunk,treeCrownMat=crownMat;   // reused for the plain trees in valley.js
 const crowns=new THREE.InstancedMesh(crown,crownMat,spots.length);
 const trunks=new THREE.InstancedMesh(trunk,std(0x4d3624),spots.length);
 const M=new THREE.Matrix4(),Q=new THREE.Quaternion(),S=new THREE.Vector3(),P=new THREE.Vector3(),UP=new THREE.Vector3(0,1,0);
 spots.forEach((s,i)=>{P.set(s[0],s[1]-.2,s[2]);Q.setFromAxisAngle(UP,s[4]);S.set(s[3],s[3]*(.9+rnd()*.3),s[3]);M.compose(P,Q,S);
   crowns.setMatrixAt(i,M);trunks.setMatrixAt(i,M);
   c.setHSL(.27+rnd()*.07,.35+rnd()*.2,.17+rnd()*.1);crowns.setColorAt(i,c);});
-spots.forEach(t=>{if(Math.hypot(t[0],t[2])<110)CIRCLES.push([t[0],t[2],.35*t[3]]);});
+spots.forEach(t=>CIRCLES.push([t[0],t[2],.35*t[3]]));   // all trees block, also on the lower mountain slopes
 crowns.frustumCulled=trunks.frustumCulled=false;
 // keep trees out of the point-light (fire) shadow maps: cheap and avoids 6x tree passes
 const noPointShadow=new THREE.MeshDistanceMaterial();noPointShadow.onBeforeCompile=s=>{s.vertexShader=s.vertexShader.replace('#include <project_vertex>','gl_Position=vec4(2.0,2.0,2.0,1.0);');};

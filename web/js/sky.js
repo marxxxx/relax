@@ -5,7 +5,7 @@ import {WU} from './materials.js';
 export const skyU={uTop:{value:new THREE.Color()},uHor:{value:new THREE.Color()},uSunCol:{value:new THREE.Color()},
   uSun:{value:new THREE.Vector3(0,1,0)},uStars:{value:0},uCloud:{value:0},uFlash:{value:0},uTime:WU.uTime,
   uCloudLit:{value:new THREE.Color()},uCloudDark:{value:new THREE.Color()},uWindOff:{value:0}};
-export const sky=new THREE.Mesh(new THREE.SphereGeometry(1200,48,24),new THREE.ShaderMaterial({
+export const sky=new THREE.Mesh(new THREE.SphereGeometry(1600,48,24),new THREE.ShaderMaterial({
   uniforms:skyU,side:THREE.BackSide,depthWrite:false,fog:false,
   vertexShader:`varying vec3 vDir;void main(){vDir=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
   fragmentShader:`

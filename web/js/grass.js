@@ -6,6 +6,7 @@ import {weatherize} from './materials.js';
 const M=new THREE.Matrix4(),Q=new THREE.Quaternion(),S=new THREE.Vector3(),P=new THREE.Vector3(),UP=new THREE.Vector3(0,1,0),c=new THREE.Color();
 // ---------- grass ----------
 const blade=new THREE.PlaneGeometry(.13,1,1,3);blade.translate(0,.5,0);
+export const grassBlade=blade;   // reused for the plain grass in valley.js
 const grassMat=weatherize(new THREE.MeshStandardMaterial({side:THREE.DoubleSide,roughness:.9,metalness:0}),'grass',`
   #ifdef USE_INSTANCING
     vec2 ip=vec2(instanceMatrix[3][0],instanceMatrix[3][2]);
@@ -22,6 +23,7 @@ const grassMat=weatherize(new THREE.MeshStandardMaterial({side:THREE.DoubleSide,
   #else
     vWPos=(modelMatrix*vec4(transformed,1.0)).xyz;
   #endif`);
+export {grassMat};
 const GRASS=isMobile?14000:26000;
 const grass=new THREE.InstancedMesh(blade,grassMat,GRASS);
 let gi=0;

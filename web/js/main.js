@@ -24,6 +24,7 @@ import {updateUI} from './ui.js';
 import {renderFrame} from './post.js';
 import {state,SPEEDS} from './state.js';
 import {updateAnimals,animals} from './animals.js';
+import {updateValley} from './valley.js';   // LAST import on purpose: keeps the seeded rnd() layout of the world above unchanged
 
 // ---------- main loop ----------
 let lastT=performance.now(),firstFrame=true;
@@ -38,6 +39,7 @@ function frame(now){
   updateEffects(dt,env);
   updatePrecipitation(dt,env);
   updateAnimals(dt,env);
+  updateValley(dt,env);
   updateCamera(dt);
   updateAudio(dt,env);
   updateUI(dt,env.sy);
