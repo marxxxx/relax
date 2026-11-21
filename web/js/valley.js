@@ -124,6 +124,25 @@ for(const R of RIVERS){
     if(rnd()<.02)c.setHSL(rnd()<.5?.13:.75,.7,.65);   // little flowers
     pg.setColorAt(gi,c);gi++;}
   pg.count=gi;pg.receiveShadow=true;pg.frustumCulled=false;scene.add(pg);}
+// lusher grass around the camp and along the pass trail (the wide plain stays sparse steppe)
+{const NG2=isMobile?3500:12000;
+  const pg2=new THREE.InstancedMesh(grassBlade,grassMat,NG2);
+  let gi=0,tries=0;
+  while(gi<NG2&&tries<40000){tries++;
+    let x,z;
+    if(rnd()<.6){const a=rnd()*6.283,rr=Math.sqrt(rnd())*95;x=CAMP.x+Math.cos(a)*rr;z=CAMP.z+Math.sin(a)*rr;}
+    else{const p=FAR_TRAIL.pts[(rnd()*FAR_TRAIL.pts.length)|0],a=rnd()*6.283,rr=rnd()*12;x=p[0]+Math.cos(a)*rr;z=p[1]+Math.sin(a)*rr;}
+    if(x-coastEdge(z)<60)continue;
+    if(riverDist(x,z)<2.2||pathDist(x,z)<1)continue;
+    let nearYurt=false;for(const yu of yurts)if(Math.hypot(x-yu.x,z-yu.z)<4.2){nearYurt=true;break;}
+    if(nearYurt)continue;
+    const y=heightAt(x,z);if(y<SEA+2||y>26)continue;
+    const h=.3+rnd()*.45;
+    P.set(x,y-.05,z);Q.setFromAxisAngle(UP,rnd()*6.28);S.set(1,h,1);M.compose(P,Q,S);pg2.setMatrixAt(gi,M);
+    c.setHSL(.2+rnd()*.08,.45+rnd()*.15,.3+rnd()*.12);
+    if(rnd()<.02)c.setHSL(rnd()<.5?.13:.75,.7,.65);
+    pg2.setColorAt(gi,c);gi++;}
+  pg2.count=gi;pg2.receiveShadow=true;pg2.frustumCulled=false;scene.add(pg2);}
 
 // ---------- riverbank boulders (hash-based, keeps the rnd() sequence of this module's own content only) ----------
 const bankRockMat=weatherize(std(0x807b73,{flatShading:true}),'rock');
