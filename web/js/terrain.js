@@ -1,10 +1,10 @@
 import {isMobile,smooth,fbm,distSeg} from './util.js';
-import {LAKE,FIRE,SEA,coastEdge,heightAt,pathDist} from './world.js';
+import {LAKE,FIRE,SEA,coastEdge,heightAt,pathDist,riverAt} from './world.js';
 import {scene} from './renderer.js';
 import {weatherize} from './materials.js';
 
 // ---------- terrain ----------
-const TS=640,TSEG=isMobile?200:340;
+const TS=1600,TSEG=isMobile?280:620;   // big enough to hold the far plain and the outer ring
 const tg=new THREE.PlaneGeometry(TS,TS,TSEG,TSEG);tg.rotateX(-Math.PI/2);
 const tp=tg.attributes.position;
 for(let i=0;i<tp.count;i++){tp.setY(i,heightAt(tp.getX(i),tp.getZ(i)));}
@@ -29,6 +29,9 @@ for(let i=0;i<tp.count;i++){
   c.lerp(ROCK,smooth(18,32,y)*.7);
   c.lerp(SNOWC,smooth(34,50,y+n*10));
   c.lerp(DIRT,(1-smooth(1.2,3.2,sd))*.4*smooth(22,40,y));   // the paths stay visible as gravel strips in rock and snow
+  const [rd,rw]=riverAt(x,z);
+  if(y<rw)c.lerp(SAND,smooth(rw-.9,rw-.1,y));               // river bed: wet sand under the water
+  else if(rd<8)c.lerp(WETSAND,(1-smooth(3.5,8,rd))*.85);     // wet band on the banks
   const lr=Math.hypot(x-LAKE.x,z-LAKE.z);
   c.lerp(SAND,(1-smooth(LAKE.r*.95,LAKE.r*1.35,lr))*.75);
   tcol[i*3]=c.r;tcol[i*3+1]=c.g;tcol[i*3+2]=c.b;
