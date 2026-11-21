@@ -17,6 +17,15 @@ const FF=70,flies=particles(FF,.32,{blending:THREE.AdditiveBlending,opacity:0});
 const flyData=[...Array(FF)].map(()=>{const a=rnd()*6.28,r=8+rnd()*24;return{x:Math.cos(a)*r,z:Math.sin(a)*r,y:.5+rnd()*2,p:rnd()*10};});
 (function(){const col=flies.geometry.attributes.color;for(let i=0;i<FF;i++)col.setXYZ(i,.85,1,.45);})();
 
+// runtime-registered emitters (e.g. the yurt camp fire in valley.js); uses Math.random, not rnd — world layout unaffected
+const emitters=[];
+export function addEmitter(type,x,y,z){
+  if(type==='smoke'){const n=26,p=particles(n,2.2,{opacity:.3});
+    emitters.push({type,x,y,z,p,data:[...Array(n)].map(()=>({life:Math.random(),x:0,y:0,z:0}))});}
+  else{const n=24,p=particles(n,.6,{blending:THREE.AdditiveBlending,fog:false});
+    emitters.push({type,x,y,z,p,data:[...Array(n)].map(()=>({life:Math.random(),ox:0,oz:0}))});}
+  return emitters[emitters.length-1];}
+
 export function updateEffects(dt,env){
   const {day,night,cl,glow,fireScale,sunIn}=env;
   {const dp=dust.geometry.attributes.position,dc=dust.geometry.attributes.color,br=.12+sunIn*.5+night*.05;
@@ -45,6 +54,21 @@ export function updateEffects(dt,env){
     sp.setXYZ(i,s.x,s.y,s.z);const fade=Math.sin(s.life*Math.PI)*sLight;sc.setXYZ(i,fade,fade,fade*1.04);}
   sp.needsUpdate=sc.needsUpdate=true;
   smoke.material.size=1.6+cur.wind;
+
+  // registered emitters (camp fires etc.)
+  for(const e of emitters){
+    const pp=e.p.geometry.attributes.position,pc=e.p.geometry.attributes.color;
+    if(e.type==='smoke'){
+      for(let i=0;i<e.data.length;i++){const s=e.data[i];s.life+=dt*.16;
+        if(s.life>1){s.life=0;s.x=e.x+(Math.random()-.5)*.3;s.y=e.y;s.z=e.z+(Math.random()-.5)*.3;}
+        s.y+=dt*(1.1-cur.wind*.4);s.x+=dt*(.2+cur.wind*2.4);s.z+=dt*Math.sin(state.T*.5+i)*.15;
+        pp.setXYZ(i,s.x,s.y,s.z);const fade=Math.sin(s.life*Math.PI)*sLight;pc.setXYZ(i,fade,fade,fade*1.04);}
+    }else{
+      for(let i=0;i<e.data.length;i++){const f=e.data[i];f.life+=dt*(1.4+Math.random()*.6);
+        if(f.life>1){f.life=0;const a=Math.random()*6.28,r=Math.random()*.3;f.ox=Math.cos(a)*r;f.oz=Math.sin(a)*r;}
+        const l=f.life;pp.setXYZ(i,e.x+f.ox*(1-l)+cur.wind*l*.4,e.y+l*1.3*fireScale,e.z+f.oz*(1-l));
+        const b=(1-l)*fireScale*.55;pc.setXYZ(i,b,b*(.5-l*.32),b*.1*(1-l));}}
+    pp.needsUpdate=pc.needsUpdate=true;}
 
   // fireflies
   flies.material.opacity=night*(1-cl)*(1-cur.rain)*(1-cur.snow);
