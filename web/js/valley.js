@@ -5,7 +5,7 @@ import {SEA,coastEdge,RIVERS,FAR_TRAIL,riverDist,riverAt,heightAt,pathDist} from
 import {scene} from './renderer.js';
 import {std,weatherize} from './materials.js';
 import {CIRCLES} from './collision.js';
-import {add,logMat} from './cabin.js';
+import {add} from './cabin.js';
 import {canvasTex} from './textures.js';
 import {water} from './terrain.js';
 import {treeCrown,treeTrunk,treeCrownMat} from './trees.js';

@@ -125,7 +125,7 @@ export function heightAt(x,z){
   for(const t of MTRAILS){if(x<t.x0||x>t.x1||z<t.z0||z>t.z1)continue;
     const [d,hp]=onPoly(x,z,t.pts);if(d<9)h=hp+(h-hp)*smooth(2,8,d);}
   const r=Math.hypot(x,z);
-  if(r>298){const [d,hp]=onPoly(x,z,FAR_TRAIL.pts);if(d<9)h=hp+(h-hp)*smooth(2,8,d)*smooth(300,312,r);}
+  if(r>298){const [d,hp]=onPoly(x,z,FAR_TRAIL.pts);const k=(1-smooth(2,8,d))*smooth(298,312,r);if(k>0)h=h*(1-k)+hp*k;}   // blend ramps in with r, no cliff at the mask edge
   for(const R of RIVERS){if(x<R.x0||x>R.x1||z<R.z0||z>R.z1)continue;   // carve the river channels
     const [d,bh]=onPoly(x,z,R.pts);const k=1-smooth(R.w,R.w+5,d);
     if(k>0)h=h*(1-k)+Math.min(h,bh)*k;}

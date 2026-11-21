@@ -67,6 +67,19 @@ if(!hasFar){
     const s=Math.abs(b[2]-a[2])/Math.hypot(b[0]-a[0],b[1]-a[1]);
     if(s>maxs)maxs=s;if(s>.5+1e-6)slopeOK=false;}
   ok(slopeOK,`FAR_TRAIL slope <= 1:2 (max ${maxs.toFixed(3)})`);
+  // the blend mask must not create a cliff where it switches on (r≈298) inside the trail corridor
+  let maxJump=0,maxSlope=0;
+  for(let a=-0.3;a<=0.3;a+=0.02){
+    const cA=Math.cos(a),sA=Math.sin(a);
+    if(W.pathDist(cA*298,sA*298)<8){
+      const h0=W.heightAt(cA*297.99,sA*297.99),h1=W.heightAt(cA*298.01,sA*298.01);
+      maxJump=Math.max(maxJump,Math.abs(h1-h0));}
+    let px=cA*296,pz=sA*296;
+    for(let r=296.1;r<=314;r+=0.1){const nx=cA*r,nz=sA*r;
+      if(W.pathDist(nx,nz)<8)maxSlope=Math.max(maxSlope,Math.abs(W.heightAt(nx,nz)-W.heightAt(px,pz))/0.1);
+      px=nx;pz=nz;}}
+  ok(maxJump<0.05,`pass entrance continuous at r=298 (max jump ${maxJump.toFixed(3)} m)`);
+  ok(maxSlope<1.26,`pass corridor walkable (max slope ${maxSlope.toFixed(2)}/m, tooSteep limit 1.25)`);
   const camp=W.heightAt(468,16),pass=W.heightAt(340,8),exit=W.heightAt(700,-30),ring=W.heightAt(0,700),plain=W.heightAt(540,140);
   ok(camp>3&&camp<9,`camp (468,16) h=${camp.toFixed(1)} in [3,9]`);
   ok(pass>8&&pass<20,`pass (340,8) h=${pass.toFixed(1)} in [8,20]`);
