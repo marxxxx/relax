@@ -81,7 +81,7 @@ export function setMode(m){
   if(m==='fp'&&prev!=='fp'){panelWasMin=bc.contains('panelMin');setPanel(true);}   // walking/riding: fold the panel away, restore it on return
   else if(m!=='fp'&&prev==='fp')setPanel(panelWasMin);
   state.mode=m;document.body.classList.toggle('fp',m==='fp');
-  $('modeBtn').textContent=m==='fp'?'Rundblick':'First-Person';
+  $('modeBtn').textContent=m==='fp'?'Rundblick':'Gehen';
   $('modeBtn').setAttribute('aria-pressed',m==='fp');
   if(m==='fp'){state.rider=null;state.watch=null;
     // start where the orbit view is currently looking (panned/zoomed position), else at the porch

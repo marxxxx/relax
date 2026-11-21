@@ -1,52 +1,67 @@
 // Entry point. The scene is built as these modules are evaluated; they share one
 // seeded random sequence, so keep the import order to get the same world layout.
+// They are imported one by one (same order as static imports would evaluate them)
+// so the loader can paint its progress bar in between.
 import {clamp,$} from './util.js';
-import {camera} from './renderer.js';
-import {WU} from './materials.js';
-import './sky.js';
-import './lights.js';
-import './terrain.js';
-import './cabin.js';
-import './interior.js';
-import './upstairs.js';
-import './campfire.js';
-import {updateEffects} from './effects.js';
-import './trees.js';
-import './props.js';
-import {updateSea} from './sea.js';
-import './grass.js';
-import {updatePrecipitation} from './precipitation.js';
-import {updateWeather} from './weather.js';
-import {updateEnvironment} from './environment.js';
-import {player,setMode,updateCamera} from './controls.js';
-import {updateAudio} from './audio.js';
-import {updateUI} from './ui.js';
-import {renderFrame} from './post.js';
-import {state,SPEEDS} from './state.js';
-import {updateAnimals,animals} from './animals.js';
-import {updateValley} from './valley.js';   // LAST import on purpose: keeps the seeded rnd() layout of the world above unchanged
+
+// ---------- loader ----------
+const bar=$('loadBar'),pct=$('loadPct');
+const setLoad=f=>{const p=Math.round(clamp(f,0,1)*100);bar.style.width=p+'%';pct.textContent=p+' %';$('loadTrack').setAttribute('aria-valuenow',p);};
+const paint=()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,0)));   // let the browser draw the bar before the next chunk of work
+let done=0;
+async function step(w,fn){const r=await fn();done+=w;setLoad(done/100);await paint();return r;}
+setLoad(0);await paint();
+
+// [weight, import] — weights ≈ measured share of the load time; all steps sum to 100
+const R=await step(6,()=>import('./renderer.js'));
+const MA=await step(.5,()=>import('./materials.js'));
+await step(.5,()=>import('./sky.js'));
+await step(.5,()=>import('./lights.js'));
+await step(40,()=>import('./terrain.js'));
+await step(.5,()=>import('./cabin.js'));
+await step(.5,()=>import('./interior.js'));
+await step(.5,()=>import('./upstairs.js'));
+await step(.5,()=>import('./campfire.js'));
+const EF=await step(.5,()=>import('./effects.js'));
+await step(.5,()=>import('./trees.js'));
+await step(1,()=>import('./props.js'));
+const SE=await step(.5,()=>import('./sea.js'));
+await step(5,()=>import('./grass.js'));
+const PR=await step(.5,()=>import('./precipitation.js'));
+const WE=await step(.5,()=>import('./weather.js'));
+const EN=await step(.5,()=>import('./environment.js'));
+const CO=await step(.5,()=>import('./controls.js'));
+const AU=await step(.5,()=>import('./audio.js'));
+const UI=await step(.5,()=>import('./ui.js'));
+const PO=await step(.5,()=>import('./post.js'));
+const ST=await step(.5,()=>import('./state.js'));
+const AN=await step(1,()=>import('./animals.js'));
+const VA=await step(15,()=>import('./valley.js'));   // LAST on purpose: keeps the seeded rnd() layout of the world above unchanged
+const {camera,renderer,scene}=R,{WU}=MA,{state,SPEEDS}=ST,{player,setMode}=CO,{animals}=AN;
 
 // ---------- main loop ----------
-let lastT=performance.now(),firstFrame=true;
-function frame(now){
-  const dt=clamp((now-lastT)/1000,0,.05);lastT=now;state.T+=dt;WU.uTime.value=state.T;
-
+function tick(dt){
+  state.T+=dt;WU.uTime.value=state.T;
   if(state.playing&&!state.dragging)state.hour=(state.hour+dt/SPEEDS[state.speedI][0])%24;
 
-  updateWeather(dt);
-  const env=updateEnvironment(dt);
-  updateSea(env);
-  updateEffects(dt,env);
-  updatePrecipitation(dt,env);
-  updateAnimals(dt,env);
-  updateValley(dt,env);
-  updateCamera(dt);
-  updateAudio(dt,env);
-  updateUI(dt,env.sy);
+  WE.updateWeather(dt);
+  const env=EN.updateEnvironment(dt);
+  SE.updateSea(env);
+  EF.updateEffects(dt,env);
+  PR.updatePrecipitation(dt,env);
+  AN.updateAnimals(dt,env);
+  VA.updateValley(dt,env);
+  CO.updateCamera(dt);
+  AU.updateAudio(dt,env);
+  UI.updateUI(dt,env.sy);
 
-  camera.updateMatrixWorld();renderFrame();
-  if(firstFrame){firstFrame=false;setTimeout(()=>$('loader').classList.add('gone'),150);}
-  requestAnimationFrame(frame);
+  camera.updateMatrixWorld();PO.renderFrame();
 }
+await step(8,()=>{renderer.compile(scene,camera);});   // shader programs of the whole scene
+await step(15,()=>tick(0));                             // warm-up frame behind the loader: shadow maps, post passes
+setTimeout(()=>$('loader').classList.add('gone'),250);
+
+let lastT=performance.now();
+function frame(now){tick(clamp((now-lastT)/1000,0,.05));lastT=now;requestAnimationFrame(frame);}
 window.__lichtung={player,setMode,animals,state,camera};
 requestAnimationFrame(frame);

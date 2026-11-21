@@ -1,9 +1,7 @@
-import {$} from './util.js';
 import {renderer,scene,camera,POST} from './renderer.js';
 
 // ---------- post-processing: height fog, sun shafts, bloom, colour grade ----------
 export const PP={};
-let lookOn=true;
 if(POST){
   const mkRT=(w,h,type,depth)=>{const rt=new THREE.WebGLRenderTarget(w,h,{type:type||THREE.HalfFloatType,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,depthBuffer:!!depth});
     if(depth){rt.depthTexture=new THREE.DepthTexture(w,h);rt.depthTexture.type=THREE.UnsignedIntType;}return rt;};
@@ -34,10 +32,10 @@ if(POST){
     uInvProj:{value:new THREE.Matrix4()},uCamWorld:{value:new THREE.Matrix4()},uCamPos:{value:new THREE.Vector3()},
     uFogCol:{value:new THREE.Color()},uFogSun:{value:new THREE.Color()},uSunDir:{value:new THREE.Vector3()},
     uFogDens:{value:.002},uFogStart:{value:30},uFogFall:{value:.045},uHaze:{value:.0012},uRayCol:{value:new THREE.Color()},uRayInt:{value:0},
-    uBloom:{value:.22},uExposure:{value:1},uLook:{value:1},uTime:{value:0},uShadowTint:{value:new THREE.Color()},
+    uBloom:{value:.22},uExposure:{value:1},uTime:{value:0},uShadowTint:{value:new THREE.Color()},
     uHighTint:{value:new THREE.Color()},uSat:{value:1.1},uVig:{value:.5}},`
     uniform sampler2D tColor,tDepth,tB1,tB2,tRays;uniform mat4 uInvProj,uCamWorld;uniform vec3 uCamPos,uFogCol,uFogSun,uSunDir,uRayCol,uShadowTint,uHighTint;
-    uniform float uFogStart,uFogDens,uFogFall,uHaze,uRayInt,uBloom,uExposure,uLook,uTime,uSat,uVig;
+    uniform float uFogStart,uFogDens,uFogFall,uHaze,uRayInt,uBloom,uExposure,uTime,uSat,uVig;
     vec3 rrt(vec3 v){vec3 a=v*(v+0.0245786)-0.000090537;vec3 b=v*(0.983729*v+0.4329510)+0.238081;return a/b;}
     vec3 aces(vec3 c){const mat3 I=mat3(vec3(0.59719,0.07600,0.02840),vec3(0.35458,0.90834,0.13383),vec3(0.04823,0.01566,0.83777));
       const mat3 O=mat3(vec3(1.60475,-0.10208,-0.00327),vec3(-0.53108,1.10813,-0.07276),vec3(-0.07367,-0.00605,1.07602));
@@ -54,18 +52,16 @@ if(POST){
       if(!sky){fog=1.0-(1.0-fog)*exp(-dist*uHaze);}else{fog*=0.92;}
       vec3 fc=mix(uFogCol,uFogSun,pow(max(dot(rd,uSunDir),0.0),6.0));
       col=mix(col,fc,clamp(fog,0.0,1.0));
-      if(uLook>0.5){col+=texture2D(tB1,vUv).rgb*uBloom+texture2D(tB2,vUv).rgb*uBloom*1.4;col+=uRayCol*texture2D(tRays,vUv).r*uRayInt;}
+      col+=texture2D(tB1,vUv).rgb*uBloom+texture2D(tB2,vUv).rgb*uBloom*1.4;col+=uRayCol*texture2D(tRays,vUv).r*uRayInt;
       col=aces(col*uExposure);
       col=srgb(col);
-      if(uLook>0.5){
-        float l=dot(col,vec3(.299,.587,.114));
-        col=mix(vec3(l),col,uSat);
-        col=mix(col,col*uShadowTint*1.3,(1.0-smoothstep(0.0,0.55,l))*0.5);
-        col=mix(col,1.0-(1.0-col)*(1.0-uHighTint*0.35),smoothstep(0.5,1.0,l)*0.35);
-        col=mix(col,col*col*(3.0-2.0*col),0.35);
-        col*=mix(1.0,smoothstep(1.3,0.35,length(vUv-0.5)*1.414),uVig);
-        float g=fract(sin(dot(vUv*vec2(1234.5,987.6)+fract(uTime),vec2(12.9898,78.233)))*43758.5453);col+=(g-0.5)*0.022;
-      }
+      float l=dot(col,vec3(.299,.587,.114));
+      col=mix(vec3(l),col,uSat);
+      col=mix(col,col*uShadowTint*1.3,(1.0-smoothstep(0.0,0.55,l))*0.5);
+      col=mix(col,1.0-(1.0-col)*(1.0-uHighTint*0.35),smoothstep(0.5,1.0,l)*0.35);
+      col=mix(col,col*col*(3.0-2.0*col),0.35);
+      col*=mix(1.0,smoothstep(1.3,0.35,length(vUv-0.5)*1.414),uVig);
+      float g=fract(sin(dot(vUv*vec2(1234.5,987.6)+fract(uTime),vec2(12.9898,78.233)))*43758.5453);col+=(g-0.5)*0.022;
       gl_FragColor=vec4(clamp(col,0.0,1.0),1.0);}`);
   PP.fxaa=mk({tIn:{value:null},uTexel:{value:new THREE.Vector2()}},`
     uniform sampler2D tIn;uniform vec2 uTexel;
@@ -92,26 +88,20 @@ export function renderFrame(){
   if(!POST){renderer.render(scene,camera);return;}
   renderer.setRenderTarget(PP.main);renderer.render(scene,camera);
   const C=PP.comp.uniforms;
-  if(lookOn){
-    PP.bright.uniforms.tIn.value=PP.main.texture;PP.bright.uniforms.uTexel.value.set(1/PP.w,1/PP.h);PP.pass(PP.bright,PP.half);
-    const bl=PP.blur.uniforms;
-    bl.tIn.value=PP.half.texture;bl.uDir.value.set(2/PP.w,0);PP.pass(PP.blur,PP.q1);
-    bl.tIn.value=PP.q1.texture;bl.uDir.value.set(0,4/PP.h);PP.pass(PP.blur,PP.q2);
-    bl.tIn.value=PP.q2.texture;bl.uDir.value.set(4/PP.w,0);PP.pass(PP.blur,PP.e1);
-    bl.tIn.value=PP.e1.texture;bl.uDir.value.set(0,8/PP.h);PP.pass(PP.blur,PP.e2);
-    if(C.uRayInt.value>.002){
-      PP.occ.uniforms.tColor.value=PP.main.texture;PP.occ.uniforms.tDepth.value=PP.main.depthTexture;PP.occ.uniforms.uAspect.value=PP.w/PP.h;PP.pass(PP.occ,PP.r1);
-      PP.radial.uniforms.tIn.value=PP.r1.texture;PP.pass(PP.radial,PP.r2);}
-  }
+  PP.bright.uniforms.tIn.value=PP.main.texture;PP.bright.uniforms.uTexel.value.set(1/PP.w,1/PP.h);PP.pass(PP.bright,PP.half);
+  const bl=PP.blur.uniforms;
+  bl.tIn.value=PP.half.texture;bl.uDir.value.set(2/PP.w,0);PP.pass(PP.blur,PP.q1);
+  bl.tIn.value=PP.q1.texture;bl.uDir.value.set(0,4/PP.h);PP.pass(PP.blur,PP.q2);
+  bl.tIn.value=PP.q2.texture;bl.uDir.value.set(4/PP.w,0);PP.pass(PP.blur,PP.e1);
+  bl.tIn.value=PP.e1.texture;bl.uDir.value.set(0,8/PP.h);PP.pass(PP.blur,PP.e2);
+  if(C.uRayInt.value>.002){
+    PP.occ.uniforms.tColor.value=PP.main.texture;PP.occ.uniforms.tDepth.value=PP.main.depthTexture;PP.occ.uniforms.uAspect.value=PP.w/PP.h;PP.pass(PP.occ,PP.r1);
+    PP.radial.uniforms.tIn.value=PP.r1.texture;PP.pass(PP.radial,PP.r2);}
   C.tColor.value=PP.main.texture;C.tDepth.value=PP.main.depthTexture;C.tB1.value=PP.q2.texture;C.tB2.value=PP.e2.texture;C.tRays.value=PP.r2.texture;
-  C.uLook.value=lookOn?1:0;
   C.uInvProj.value.copy(camera.projectionMatrixInverse);C.uCamWorld.value.copy(camera.matrixWorld);C.uCamPos.value.copy(camera.position);
   PP.pass(PP.comp,PP.ldr);
   PP.fxaa.uniforms.tIn.value=PP.ldr.texture;PP.fxaa.uniforms.uTexel.value.set(1/PP.w,1/PP.h);PP.pass(PP.fxaa,null);
 }
-const lookBtn=$('lookBtn');
-if(!POST)lookBtn.style.display='none';
-lookBtn.addEventListener('click',()=>{lookOn=!lookOn;lookBtn.setAttribute('aria-pressed',lookOn);lookBtn.textContent=lookOn?'Filmlook':'Ohne Filmlook';});
 
 // ---------- resize ----------
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);if(POST)PP.resize();});

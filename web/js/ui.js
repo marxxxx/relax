@@ -14,7 +14,8 @@ timeIn.addEventListener('input',()=>{state.hour=parseFloat(timeIn.value);state.d
 timeIn.addEventListener('change',()=>{state.dragging=false;});
 $('playBtn').addEventListener('click',()=>{state.playing=!state.playing;$('playBtn').setAttribute('aria-label',state.playing?'Zeit anhalten':'Zeit laufen lassen');
   $('playIcon').innerHTML=state.playing?'<rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/>':'<path d="M4 2.5v11a1 1 0 0 0 1.5.86l9-5.5a1 1 0 0 0 0-1.72l-9-5.5A1 1 0 0 0 4 2.5z"/>';});
-$('speedBtn').addEventListener('click',()=>{state.speedI=(state.speedI+1)%SPEEDS.length;$('speedBtn').textContent=SPEEDS[state.speedI][1];});
+const speedLbl=()=>$('speedBtn').textContent=SPEEDS[state.speedI][1];speedLbl();
+$('speedBtn').addEventListener('click',()=>{state.speedI=(state.speedI+1)%SPEEDS.length;speedLbl();});
 document.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{state.wKey=b.dataset.w;
   document.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
   if(state.wKey==='gewitter')state.nextBolt=state.T+2.5;}));
