@@ -4,7 +4,7 @@ import {scene} from './renderer.js';
 import {weatherize} from './materials.js';
 
 // ---------- terrain ----------
-const TS=640,TSEG=isMobile?200:290;
+const TS=640,TSEG=isMobile?200:340;
 const tg=new THREE.PlaneGeometry(TS,TS,TSEG,TSEG);tg.rotateX(-Math.PI/2);
 const tp=tg.attributes.position;
 for(let i=0;i<tp.count;i++){tp.setY(i,heightAt(tp.getX(i),tp.getZ(i)));}
@@ -23,11 +23,12 @@ for(let i=0;i<tp.count;i++){
   c.lerp(ROCK,smooth(.82,.62,ny)*smooth(5,12,y));
   const steep=smooth(.72,.5,ny);
   c.lerp(c2.copy(ROCK).multiplyScalar(.75+.5*fbm(x*.15+y*.4,z*.15)).lerp(CLIFF2,smooth(.4,.7,fbm(y*.35,x*.05+z*.05))*.5),steep*.92);
-  const sd=pathDist(x,z);c.lerp(DIRT,(1-smooth(.8,2.0,sd))*.8*(y>SEA+2?1:.3));
+  const sd=pathDist(x,z);c.lerp(DIRT,(1-smooth(1.1,3.0,sd))*.85*(y>SEA+2?1:.3));
   const dxc=x-coastEdge(z);
   if(dxc<-4){const sandW=smooth(SEA+3.5,SEA+1.5,y);c.lerp(SAND,sandW*smooth(.6,.8,ny));c.lerp(WETSAND,smooth(SEA+.8,SEA-.2,y));}
   c.lerp(ROCK,smooth(18,32,y)*.7);
   c.lerp(SNOWC,smooth(34,50,y+n*10));
+  c.lerp(DIRT,(1-smooth(1.2,3.2,sd))*.4*smooth(22,40,y));   // the paths stay visible as gravel strips in rock and snow
   const lr=Math.hypot(x-LAKE.x,z-LAKE.z);
   c.lerp(SAND,(1-smooth(LAKE.r*.95,LAKE.r*1.35,lr))*.75);
   tcol[i*3]=c.r;tcol[i*3+1]=c.g;tcol[i*3+2]=c.b;

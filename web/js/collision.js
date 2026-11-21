@@ -10,7 +10,7 @@ export function blocked(x,z,y=0){
   for(const b of BOXES)if(x>b[0]-PR&&x<b[1]+PR&&z>b[2]-PR&&z<b[3]+PR&&(b[4]===undefined||(y+1.75>b[4]&&y+.1<b[5])))return true;
   for(const c of CIRCLES){const dx=x-c[0],dz=z-c[1],r=c[2]+PR;if(dx*dx+dz*dz<r*r)return true;}
   if(Math.hypot(x-LAKE.x,z-LAKE.z)<LAKE.r*1.02)return true;
-  if(Math.hypot(x,z)>120)return true;
+  if(Math.hypot(x,z)>306)return true;   // the mountains ring the clearing out to ~300
   if(x<-40&&heightAt(x,z)<SEA+.25)return true;   // the sea
   return false;}
 // cliffs and ravine walls are too steep to walk

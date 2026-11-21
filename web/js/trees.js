@@ -40,7 +40,7 @@ const M=new THREE.Matrix4(),Q=new THREE.Quaternion(),S=new THREE.Vector3(),P=new
 spots.forEach((s,i)=>{P.set(s[0],s[1]-.2,s[2]);Q.setFromAxisAngle(UP,s[4]);S.set(s[3],s[3]*(.9+rnd()*.3),s[3]);M.compose(P,Q,S);
   crowns.setMatrixAt(i,M);trunks.setMatrixAt(i,M);
   c.setHSL(.27+rnd()*.07,.35+rnd()*.2,.17+rnd()*.1);crowns.setColorAt(i,c);});
-spots.forEach(t=>{if(Math.hypot(t[0],t[2])<110)CIRCLES.push([t[0],t[2],.35*t[3]]);});
+spots.forEach(t=>CIRCLES.push([t[0],t[2],.35*t[3]]));   // all trees block, also on the lower mountain slopes
 crowns.frustumCulled=trunks.frustumCulled=false;
 // keep trees out of the point-light (fire) shadow maps: cheap and avoids 6x tree passes
 const noPointShadow=new THREE.MeshDistanceMaterial();noPointShadow.onBeforeCompile=s=>{s.vertexShader=s.vertexShader.replace('#include <project_vertex>','gl_Position=vec4(2.0,2.0,2.0,1.0);');};
