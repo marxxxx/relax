@@ -3,7 +3,7 @@
 import {isMobile,rnd,hash,smooth,clamp} from './util.js';
 import {SEA,coastEdge,RIVERS,FAR_TRAIL,riverDist,riverAt,riverNear,heightAt,pathDist} from './world.js';
 import {scene} from './renderer.js';
-import {std,weatherize,WU} from './materials.js';
+import {std,weatherize,WU,WATER_NOISE,WATER_TAIL} from './materials.js';
 import {CIRCLES} from './collision.js';
 import {add} from './cabin.js';
 import {canvasTex} from './textures.js';
@@ -93,9 +93,7 @@ const riverMat=new THREE.ShaderMaterial({uniforms:riverU,fog:true,transparent:tr
     uniform vec3 uSkyTop,uSkyHor,uSunDir,uSunCol,uScat,uBank,uLand,uFoam; uniform float uTime,uRain,uWind;
     varying vec3 vW; varying vec2 vFlow,vUV,vBank; varying float vDepth,vSpeed,vRough,vFade;
     #include <fog_pars_fragment>
-    float h21(vec2 p){vec3 q=fract(vec3(p.xyx)*.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}
-    float n2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
-      return mix(mix(h21(i),h21(i+vec2(1.,0.)),f.x),mix(h21(i+vec2(0.,1.)),h21(i+vec2(1.,1.)),f.x),f.y);}
+    ${WATER_NOISE}
     // ripple height: stretched along the current (s), so the surface shows the flow lines
     float rip(vec2 q){return n2(q*vec2(.42,1.4))*.5+n2(q*vec2(1.,3.1)+3.1)*.3+n2(q*vec2(2.4,6.)+7.7)*.2;}
     vec2 gradRip(vec2 q){const float e=.07;float h=rip(q);return vec2(rip(q+vec2(e,0.))-h,rip(q+vec2(0.,e))-h)/e;}
@@ -137,16 +135,7 @@ const riverMat=new THREE.ShaderMaterial({uniforms:riverU,fog:true,transparent:tr
       col=col*(1.-foam)+uFoam*foam;a=a*(1.-foam)+foam;
       float shore=smoothstep(0.,.05,vDepth);                           // soft waterline
       gl_FragColor=vec4(col,a)*shore*vFade;
-      #ifdef USE_FOG
-        #ifdef FOG_EXP2
-          float fogFactor=1.-exp(-fogDensity*fogDensity*fogDepth*fogDepth);
-        #else
-          float fogFactor=smoothstep(fogNear,fogFar,fogDepth);
-        #endif
-        gl_FragColor.rgb=mix(gl_FragColor.rgb,fogColor*gl_FragColor.a,fogFactor);
-      #endif
-      #include <tonemapping_fragment>
-      #include <encodings_fragment>
+      ${WATER_TAIL}
     }`});
 {const NA=11;
   for(const R of RIVERS){

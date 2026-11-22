@@ -19,7 +19,7 @@ const R=await step(6,()=>load('./renderer.js'));
 const MA=await step(.5,()=>load('./materials.js'));
 await step(.5,()=>load('./sky.js'));
 await step(.5,()=>load('./lights.js'));
-await step(40,()=>load('./terrain.js'));
+const TE=await step(40,()=>load('./terrain.js'));
 await step(.5,()=>load('./cabin.js'));
 await step(.5,()=>load('./interior.js'));
 await step(.5,()=>load('./upstairs.js'));
@@ -49,6 +49,7 @@ function tick(dt){
   WE.updateWeather(dt);
   const env=EN.updateEnvironment(dt);
   SE.updateSea(env);
+  TE.updateLake(dt,env);
   EF.updateEffects(dt,env);
   PR.updatePrecipitation(dt,env);
   AN.updateAnimals(dt,env);
