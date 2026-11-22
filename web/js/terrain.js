@@ -52,7 +52,8 @@ terrain.receiveShadow=true;scene.add(terrain);
 // the forest rim mirrored in calm water, sun/moon glint. Still water, so the ripples drift with the wind instead of a current:
 // gusts roughen passing patches (cat's paws), a storm raises whitecaps, wind lanes and surf on the lee shore, rain adds rings.
 const WL=-1.0;   // water level; the wind blows toward +x, as trees, grass and smoke lean
-const lakeU={uTime:WU.uTime,uWind:WU.uWind,uRain:{value:0},uStorm:{value:0},
+const lakeU={...THREE.UniformsUtils.clone(THREE.UniformsLib.fog),uTime:WU.uTime,   // fog uniforms: built-in fog (WebGL1, VR)
+  uWind:WU.uWind,uRain:{value:0},uStorm:{value:0},
   uOff:{value:new THREE.Vector2()},uGust:{value:new THREE.Vector2()},uC:{value:new THREE.Vector2(LAKE.x,LAKE.z)},
   uSunDir:{value:new THREE.Vector3()},uSunCol:{value:new THREE.Color()},uSkyTop:{value:new THREE.Color()},uSkyHor:{value:new THREE.Color()},
   uScat:{value:new THREE.Color()},uBank:{value:new THREE.Color()},uWood:{value:new THREE.Color()},uFoam:{value:new THREE.Color()}};

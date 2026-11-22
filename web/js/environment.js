@@ -1,6 +1,6 @@
 // Per-frame lighting: sun and moon, sky colours, fog and colour grade, window glow and fire light.
 import {lerp,smooth} from './util.js';
-import {renderer,scene,camera,POST} from './renderer.js';
+import {renderer,camera,POST,fogX} from './renderer.js';
 import {WU} from './materials.js';
 import {skyU,sky,skyAt,greyify} from './sky.js';
 import {hemi,sun} from './lights.js';
@@ -40,7 +40,7 @@ export function updateEnvironment(dt){
   skyU.uCloudDark.value.copy(hor).lerp(top,.5).multiplyScalar(.62*(1-cur.storm*.5)).lerp(c.setRGB(.25,.12,.2),golden*.25);
   skyU.uWindOff.value+=dt*(.006+cur.wind*.03);
   WU.uSunDir.value.copy(sunDir);WU.uSunCol.value.copy(sunCol).multiplyScalar(day*(1-cl*.85)*(1-state.indoor*.5)*(.3+.7*golden));
-  sky.position.copy(camera.position);
+  camera.getWorldPosition(sky.position);   // in VR the camera sits in the rig
 
   // lights
   const useSun=sy>-.04;
@@ -54,7 +54,7 @@ export function updateEnvironment(dt){
 
   const fogDens=(.0026+cur.fog*.032+cur.rain*.006+cur.snow*.009)*(1-state.indoor*.85);
   const expo=1.0+night*.25*(1-state.indoor)+state.indoor*.3*day;
-  if(!POST){scene.fog.color.copy(hor);scene.fog.density=fogDens;renderer.toneMappingExposure=expo;}
+  if(!POST||state.xr){fogX.color.copy(hor);fogX.density=fogDens;renderer.toneMappingExposure=expo;}
   else{const C=PP.comp.uniforms;
     C.uFogCol.value.copy(hor);C.uFogSun.value.copy(hor).lerp(sunCol,.55*(1-cl*.7)*smooth(-.1,.05,sy));C.uSunDir.value.copy(sunDir);
     C.uFogDens.value=fogDens*.55;C.uFogStart.value=lerp(40,3,Math.max(cur.fog,cur.snow*.6,cur.rain*.4))*(1-state.indoor*.7);C.uFogFall.value=lerp(.026,.015,cur.fog);C.uHaze.value=.0006*(1-state.indoor*.9)+cur.fog*.004;

@@ -1,4 +1,5 @@
-import {renderer,scene,camera,POST} from './renderer.js';
+import {renderer,scene,camera,POST,fogX} from './renderer.js';
+import {state} from './state.js';
 
 // ---------- post-processing: height fog, sun shafts, bloom, colour grade ----------
 export const PP={};
@@ -84,8 +85,12 @@ if(POST){
   PP.resize();
   PP.pass=(mat,target)=>{PP.quad.material=mat;renderer.setRenderTarget(target);renderer.render(PP.scene,PP.cam);};
 }
+// VR has no post pass (single-camera screen-space effects don't work per eye): use the WebGL1 look — built-in ACES + FogExp2
+export function useBuiltIn(on){if(!POST)return;
+  renderer.toneMapping=on?THREE.ACESFilmicToneMapping:THREE.NoToneMapping;scene.fog=on?fogX:null;
+  scene.traverse(o=>{if(o.material)for(const m of [].concat(o.material))m.needsUpdate=true;});}   // r128 doesn't recompile on a tone-mapping change
 export function renderFrame(){
-  if(!POST){renderer.render(scene,camera);return;}
+  if(!POST||state.xr){renderer.render(scene,camera);return;}
   renderer.setRenderTarget(PP.main);renderer.render(scene,camera);
   const C=PP.comp.uniforms;
   PP.bright.uniforms.tIn.value=PP.main.texture;PP.bright.uniforms.uTexel.value.set(1/PP.w,1/PP.h);PP.pass(PP.bright,PP.half);

@@ -44,7 +44,7 @@ canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,mv:0,t:performance.now()});
   if(pointers.size===2)pinchStart();
   if(pointers.size===1&&state.mode==='orbit'&&e.pointerType==='touch'){const t=performance.now();if(t-lastTap<300)goHome();lastTap=t;}});
-canvas.addEventListener('pointermove',e=>{const p=pointers.get(e.pointerId);if(!p)return;idle=0;
+canvas.addEventListener('pointermove',e=>{const p=pointers.get(e.pointerId);if(!p||state.xr)return;idle=0;   // VR: the headset looks around
   const dx=e.clientX-p.x,dy=e.clientY-p.y;if(dx||dy)lastTap=0;p.mv+=Math.abs(dx)+Math.abs(dy);
   if(state.mode==='fp'){const k=e.pointerType==='touch'?.0065:.0042;
     if(state.rider){rideCtl.turn-=dx*k;rideCtl.pitch=clamp(rideCtl.pitch-dy*k,-1.1,1.1);}
@@ -59,7 +59,7 @@ for(const t of ['pointerup','pointercancel','lostpointercapture'])canvas.addEven
 canvas.addEventListener('dblclick',()=>{if(state.mode==='orbit')goHome();});
 canvas.addEventListener('wheel',e=>{e.preventDefault();if(state.mode==='fp')return;idle=0;hideHint();tDist=clamp(tDist*(1+Math.sign(e.deltaY)*.1),minD(),220);},{passive:false});
 
-addEventListener('keydown',e=>{if(e.code==='Escape'&&(state.rider||state.mode==='fp'))setMode('orbit');   // detach from the animal (or leave fp) -> orbit, camera stays on the animal via state.watch — also works while a slider has focus
+addEventListener('keydown',e=>{if(e.code==='Escape'&&!state.xr&&(state.rider||state.mode==='fp'))setMode('orbit');   // detach from the animal (or leave fp) -> orbit, camera stays on the animal via state.watch — also works while a slider has focus
   if(e.target&&e.target.type==='range')return;keys[e.code]=true;
   if(state.mode==='fp'&&/^(Arrow|Space)/.test(e.code))e.preventDefault();});
 addEventListener('keyup',e=>{keys[e.code]=false;});
@@ -107,7 +107,8 @@ export function updateCamera(dt){
   const g=Math.max(0,cur.wind-1)*1.6; // sturm gusts shake the camera
   if(state.mode==='fp'){
     if(joy.style.display!=='')joy.style.display='';
-    if(state.rider){   // ride view: camera glued to the animal's head, the animal is steered in animals.js
+    if(state.xr)drop.on=false;   // VR: no drop, no bob, no shake — the rig follows the player (xr.js), keys walk along the gaze
+    if(state.rider&&!state.xr){   // ride view: camera glued to the animal's head, the animal is steered in animals.js
       const r=state.rider,an=r.anchor||r.g,fly=r.kind==='bird'||r.kind==='gull';
       an.updateWorldMatrix(true,false);
       camP.set(r.eyeOff.x,r.eyeOff.y,r.eyeOff.z).applyMatrix4(an.matrixWorld);
@@ -124,6 +125,7 @@ export function updateCamera(dt){
     if(!drop.on&&!blocked(player.x,player.z+mz,py)&&!tooSteep(player.x,player.z,player.x,player.z+mz,py))player.z+=mz;
     const moving=!drop.on&&Math.hypot(mx,mz)>1e-4;if(moving)player.bob+=Math.hypot(mx,mz)*3.2;
     const fy=floorAt(player.x,player.z,player.y);player.y+=(fy-player.y)*Math.min(1,dt*12);
+    if(!state.xr){   // VR: the rig carries the camera instead (xr.js)
     if(drop.on){   // camera falls from the orbit position down to eye level, then walking starts
       drop.t=Math.min(1,drop.t+dt/drop.dur);
       const e=smooth(0,1,drop.t);
@@ -136,7 +138,7 @@ export function updateCamera(dt){
       camera.rotation.order='YXZ';camera.rotation.set(player.pitch,player.yaw,0);
       camera.position.set(player.x,player.y+1.62+Math.sin(player.bob)*.03*(moving?1:0),player.z);}
     camera.position.x+=Math.sin(state.T*7.1)*g*.035;camera.position.y+=Math.sin(state.T*11.3+1.7)*g*.022;
-    camera.rotation.z=Math.sin(state.T*5.9)*g*.014;
+    camera.rotation.z=Math.sin(state.T*5.9)*g*.014;}
     target.set(player.x,player.y+1.6,player.z);
     }
   }else{
