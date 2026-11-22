@@ -1,10 +1,9 @@
-// Per-frame lighting: sun and moon, sky colours, fog and colour grade, lake, window glow and fire light.
+// Per-frame lighting: sun and moon, sky colours, fog and colour grade, window glow and fire light.
 import {lerp,smooth} from './util.js';
 import {renderer,scene,camera,POST} from './renderer.js';
 import {WU} from './materials.js';
 import {skyU,sky,skyAt,greyify} from './sky.js';
 import {hemi,sun} from './lights.js';
-import {water} from './terrain.js';
 import {glowMat,winLight} from './cabin.js';
 import {hearthLight,bounceLight,lanternLight,updateBeams} from './interior.js';
 import {candleLight} from './upstairs.js';
@@ -73,10 +72,6 @@ export function updateEnvironment(dt){
     sT.setRGB(.55,.72,.85).lerp(c.setRGB(.62,.45,.85),golden).lerp(c.setRGB(.38,.5,.92),night*.85).lerp(c.setRGB(.62,.46,.4),state.indoor*.7);
     hT.setRGB(1,.93,.78).lerp(c.setRGB(1,.68,.42),golden).lerp(c.setRGB(.7,.85,1),night*.7).lerp(c.setRGB(1,.74,.48),state.indoor*.6);
     C.uSat.value=1.1-cur.storm*.15-cur.fog*.08;}
-
-
-  water.material.color.copy(hor).lerp(c.setHex(0x1b3440).convertSRGBToLinear(),.55).multiplyScalar(.6+.4*day);
-  water.material.specular.copy(useSun?sunCol:c.setHex(0x9fb2ff)).multiplyScalar(.6*(1-cl));
 
   // windows & fire
   const glow=Math.max(night,cl*.35,(1-day)*.6);

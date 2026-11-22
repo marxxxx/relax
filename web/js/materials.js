@@ -35,3 +35,20 @@ export function weatherize(mat,key,extraVertex){
 }
 
 export const std=(col,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:col,roughness:.9,metalness:0},o));
+
+// ---------- water shaders (river, lake): value noise and the fog / tone-map tail of a premultiplied-alpha surface ----------
+export const WATER_NOISE=`
+    float h21(vec2 p){vec3 q=fract(vec3(p.xyx)*.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}
+    float n2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+      return mix(mix(h21(i),h21(i+vec2(1.,0.)),f.x),mix(h21(i+vec2(0.,1.)),h21(i+vec2(1.,1.)),f.x),f.y);}`;
+export const WATER_TAIL=`
+      #ifdef USE_FOG
+        #ifdef FOG_EXP2
+          float fogFactor=1.-exp(-fogDensity*fogDensity*fogDepth*fogDepth);
+        #else
+          float fogFactor=smoothstep(fogNear,fogFar,fogDepth);
+        #endif
+        gl_FragColor.rgb=mix(gl_FragColor.rgb,fogColor*gl_FragColor.a,fogFactor);
+      #endif
+      #include <tonemapping_fragment>
+      #include <encodings_fragment>`;
