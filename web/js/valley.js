@@ -73,7 +73,8 @@ firePit(CAMP.x-6,CAMP.z-4,false);
 // One ribbon mesh per river, laid out in river space (s = metres downstream, l = metres across), so the ripple pattern can be
 // advected with the current. Water is transparent by depth (the bed shows through in the shallows), reflects the sky and,
 // near the horizon, the dark banks; riffles and white water appear where the river runs steep or shallow.
-const riverU={uTime:WU.uTime,uWind:WU.uWind,uRain:{value:0},
+const riverU={...THREE.UniformsUtils.clone(THREE.UniformsLib.fog),uTime:WU.uTime,   // fog uniforms: built-in fog (WebGL1, VR)
+  uWind:WU.uWind,uRain:{value:0},
   uSunDir:{value:new THREE.Vector3()},uSunCol:{value:new THREE.Color()},
   uSkyTop:{value:new THREE.Color()},uSkyHor:{value:new THREE.Color()},
   uScat:{value:new THREE.Color()},uBank:{value:new THREE.Color()},uLand:{value:new THREE.Color()},uFoam:{value:new THREE.Color()}};

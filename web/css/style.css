@@ -59,6 +59,7 @@ canvas#scene{position:fixed;inset:0;width:100vw;height:100vh;display:block}
   display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer}
 .iconbtn[aria-pressed="true"]{border-color:var(--ember);color:#fff}
 .iconbtn svg{width:18px;height:18px}
+.iconbtn[hidden]{display:none}
 
 .panel{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(560px,100%);
   padding:0 10px calc(env(safe-area-inset-bottom,0px) + 10px);display:flex;flex-direction:column;align-items:center}

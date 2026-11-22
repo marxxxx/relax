@@ -39,21 +39,23 @@ function chirp(vol){if(!A)return;const t0=AC.currentTime;const n=2+Math.floor(Ma
 export function thunder(delay,vol){if(!A)return;const s=AC.createBufferSource();s.buffer=A.brown;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=160;
   const g=AC.createGain();const t=AC.currentTime+delay;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.08);g.gain.exponentialRampToValueAtTime(.001,t+4.5);
   s.connect(lp);lp.connect(g);g.connect(A.master);s.start(t,Math.random()*2,5);}
+export const soundIsOn=()=>soundOn;
 $('soundBtn').addEventListener('click',async()=>{
   soundOn=!soundOn;if(soundOn&&!AC)initAudio();
   if(AC){soundOn?await AC.resume():await AC.suspend();}
   $('soundBtn').setAttribute('aria-pressed',soundOn);$('waves').setAttribute('opacity',soundOn?'1':'.35');
   $('soundLbl').textContent=soundOn?'An':'Klang';});
 
+const cp=new THREE.Vector3();   // listener = camera's world position (in VR it sits in the rig)
 export function updateAudio(dt,env){
   const {day,night,cl,fireScale}=env;
-  if(A&&soundOn){A.acc+=dt;
+  if(A&&soundOn){A.acc+=dt;camera.getWorldPosition(cp);
     if(A.acc>.2){A.acc=0;const t=AC.currentTime;
       A.windG.gain.setTargetAtTime((.08+cur.wind*.35)*(1-state.indoor*.6),t,.6);
-      A.rainG.gain.setTargetAtTime(cur.rain*.32*(1-state.indoor*.35),t,.6);{const cd=camera.position.x-coastEdge(camera.position.z);A.surfG.gain.setTargetAtTime(clamp(1-(cd+14)/110,0,1)*(.18+cur.wind*.3)*(1-state.indoor*.7),t,.8);}A.rl.frequency.setTargetAtTime(6500-state.indoor*5000,t,.5);
-      {const rd=riverDist(camera.position.x,camera.position.z),k=clamp(1-(rd-4)/80,0,1);A.riverG.gain.setTargetAtTime(k*k*.3*(1-state.indoor*.7),t,.8);}
+      A.rainG.gain.setTargetAtTime(cur.rain*.32*(1-state.indoor*.35),t,.6);{const cd=cp.x-coastEdge(cp.z);A.surfG.gain.setTargetAtTime(clamp(1-(cd+14)/110,0,1)*(.18+cur.wind*.3)*(1-state.indoor*.7),t,.8);}A.rl.frequency.setTargetAtTime(6500-state.indoor*5000,t,.5);
+      {const rd=riverDist(cp.x,cp.z),k=clamp(1-(rd-4)/80,0,1);A.riverG.gain.setTargetAtTime(k*k*.3*(1-state.indoor*.7),t,.8);}
       A.cricketG.gain.setTargetAtTime(night*(1-cl*.7)*(1-cur.rain)*(1-cur.snow)*.012,t,1);}
-    const fd=camera.position.distanceTo(FIRE),fv=Math.max(clamp(1-fd/45,0,1)*.22*fireScale*(1-state.indoor*.8),clamp(1-camera.position.distanceTo(hearthLight.position)/12,0,1)*.2);
+    const fd=cp.distanceTo(FIRE),fv=Math.max(clamp(1-fd/45,0,1)*.22*fireScale*(1-state.indoor*.8),clamp(1-cp.distanceTo(hearthLight.position)/12,0,1)*.2);
     if(Math.random()<dt*9)crackle(fv);
     if(day>.6&&cur.rain<.2&&cur.snow<.3&&Math.random()<dt*.18)chirp(.035*(1-cl*.6));}
 }

@@ -15,5 +15,7 @@ renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 
 export const scene=new THREE.Scene();
-scene.fog=POST?null:new THREE.FogExp2(0xaabbcc,.003);
+export const fogX=new THREE.FogExp2(0xaabbcc,.003);   // built-in fog: WebGL1, and in VR (no post pass there)
+scene.fog=POST?null:fogX;
 export const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,2500);
+export const rig=new THREE.Group();scene.add(rig);   // VR: carries the camera to the player's spot, the headset turns it inside
