@@ -11,7 +11,7 @@ let last=0,off=false;   // off: "Neu beginnen" cleared the save, don't write it 
 export function writeSave(){
   if(off)return;const now=new Date();
   const s={player:viewState(),                                    // x/z = ground plane (world units), y = height
-    weather:{key:state.wKey,live:state.wLive,cur:state.live},     // cur: last real reading (Open-Meteo)
+    weather:{preset:state.wKey},                                  // key of W
     time:{hour:+state.hour.toFixed(3),real:now.toISOString()},    // hour = in-game time of day
     savedAt:now.toISOString()};
   try{localStorage.setItem(KEY,JSON.stringify(s));state.savedAt=now;}catch(e){}}
@@ -25,18 +25,15 @@ function readSave(){
 export const restored=readSave();
 if(restored){const S=restored,t=S.time||{},w=S.weather||{};
   if(isFinite(t.hour))state.hour=((t.hour%24)+24)%24;
-  if(w.cur&&typeof w.cur==='object')state.live=w.cur;
-  if(typeof w.live==='boolean')state.wLive=w.live;
-  if(W[w.key])state.wKey=w.key;
+  if(W[w.preset])state.wKey=w.preset;
   Object.assign(cur,W[state.wKey]);state.snowCover=cur.snow;state.wet=cur.rain;   // start in the saved weather instead of blending in from 'klar'
   setView(S.player);
   state.savedAt=new Date(S.savedAt);
-  const hh=Math.floor(state.hour),mm=Math.floor((state.hour-hh)*60),L=state.live;
+  const hh=Math.floor(state.hour),mm=Math.floor((state.hour-hh)*60);
   const toast=$('toast');
   toast.textContent=`Fortgesetzt, Stand vom ${state.savedAt.toLocaleString('de-DE',{dateStyle:'short',timeStyle:'short'})}: `+
     `${S.player.mode==='fp'?'unterwegs':'Rundblick'} bei (${Math.round(S.player.x)}, ${Math.round(S.player.z)}), `+
-    `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')} Uhr, ${W[state.wKey].label}`+
-    (state.wLive&&L?` (echt: ${Math.round(L.temp)} °C, ${L.desc}, Wind ${Math.round(L.wind)} km/h)`:'');
+    `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')} Uhr, ${W[state.wKey].label}`;
   toast.classList.remove('gone');setTimeout(()=>toast.classList.add('gone'),8000);}
 
 // ---------- start over ----------

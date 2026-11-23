@@ -17,10 +17,8 @@ $('playBtn').addEventListener('click',()=>{state.playing=!state.playing;$('playB
 const speedLbl=()=>$('speedBtn').textContent=SPEEDS[state.speedI][1];speedLbl();
 $('speedBtn').addEventListener('click',()=>{state.speedI=(state.speedI+1)%SPEEDS.length;speedLbl();});
 const chips=document.querySelectorAll('.chip');let shownW='';
-chips.forEach(b=>b.addEventListener('click',()=>{const w=b.dataset.w;state.wLive=w==='live';
-  if(state.wLive){state.nextLive=0;return;}   // weather.js fetches the real weather and picks the matching preset
-  state.wKey=w;if(w==='gewitter')state.nextBolt=state.T+2.5;}));
-const hm=d=>new Date(d).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+chips.forEach(b=>b.addEventListener('click',()=>{state.wKey=b.dataset.w;
+  if(state.wKey==='gewitter')state.nextBolt=state.T+2.5;}));   // pressed state follows state.wKey in updateUI (also after a resume)
 
 function phaseName(h,sy){
   if(sy<-.2)return 'Nacht';
@@ -36,13 +34,11 @@ function phaseName(h,sy){
 let uiAcc=1;
 export function updateUI(dt,sy){
   uiAcc+=dt;
-  const pk=state.wLive?'live':state.wKey;if(pk!==shownW){shownW=pk;chips.forEach(x=>x.setAttribute('aria-pressed',x.dataset.w===pk));}
+  if(state.wKey!==shownW){shownW=state.wKey;chips.forEach(x=>x.setAttribute('aria-pressed',x.dataset.w===shownW));}
   if(uiAcc>.15){uiAcc=0;
-    const L=state.live;
-    $('liveInfo').textContent=(L?`Echt: ${Math.round(L.temp)} °C, ${L.desc}, Wind ${Math.round(L.wind)} km/h (${L.name}, ${hm(L.at)})`:'Echtes Wetter: noch keine Daten')+(state.savedAt?` · gespeichert ${state.savedAt.toLocaleTimeString('de-DE')}`:'');
-    $('liveErr').textContent=state.wErr;
+    $('saveInfo').textContent='Wetter: '+W[state.wKey].label+' · '+(state.savedAt?'gespeichert '+state.savedAt.toLocaleTimeString('de-DE'):'noch nicht gespeichert');
     if(!state.dragging)timeIn.value=state.hour.toFixed(2);
     knob.style.left=(state.hour/24*100)+'%';knob.classList.toggle('moon',sy<-.04);
     const hh=Math.floor(state.hour),mm=Math.floor((state.hour-hh)*60/5)*5;clock.textContent=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
-    $('mood').textContent=phaseName(state.hour,sy)+', '+(state.wLive&&L?L.desc+', '+Math.round(L.temp)+' °C':W[state.wKey].label);}
+    $('mood').textContent=phaseName(state.hour,sy)+', '+W[state.wKey].label;}
 }
