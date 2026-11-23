@@ -16,9 +16,9 @@ $('playBtn').addEventListener('click',()=>{state.playing=!state.playing;$('playB
   $('playIcon').innerHTML=state.playing?'<rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/>':'<path d="M4 2.5v11a1 1 0 0 0 1.5.86l9-5.5a1 1 0 0 0 0-1.72l-9-5.5A1 1 0 0 0 4 2.5z"/>';});
 const speedLbl=()=>$('speedBtn').textContent=SPEEDS[state.speedI][1];speedLbl();
 $('speedBtn').addEventListener('click',()=>{state.speedI=(state.speedI+1)%SPEEDS.length;speedLbl();});
-document.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{state.wKey=b.dataset.w;
-  document.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
-  if(state.wKey==='gewitter')state.nextBolt=state.T+2.5;}));
+const chips=document.querySelectorAll('.chip');let shownW='';
+chips.forEach(b=>b.addEventListener('click',()=>{state.wKey=b.dataset.w;
+  if(state.wKey==='gewitter')state.nextBolt=state.T+2.5;}));   // pressed state follows state.wKey in updateUI (also after a resume)
 
 function phaseName(h,sy){
   if(sy<-.2)return 'Nacht';
@@ -34,7 +34,9 @@ function phaseName(h,sy){
 let uiAcc=1;
 export function updateUI(dt,sy){
   uiAcc+=dt;
+  if(state.wKey!==shownW){shownW=state.wKey;chips.forEach(x=>x.setAttribute('aria-pressed',x.dataset.w===shownW));}
   if(uiAcc>.15){uiAcc=0;
+    $('saveInfo').textContent='Wetter: '+W[state.wKey].label+' · '+(state.savedAt?'gespeichert '+state.savedAt.toLocaleTimeString('de-DE'):'noch nicht gespeichert');
     if(!state.dragging)timeIn.value=state.hour.toFixed(2);
     knob.style.left=(state.hour/24*100)+'%';knob.classList.toggle('moon',sy<-.04);
     const hh=Math.floor(state.hour),mm=Math.floor((state.hour-hh)*60/5)*5;clock.textContent=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');

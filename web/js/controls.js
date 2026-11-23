@@ -100,6 +100,18 @@ export function setMode(m){
   camera.updateProjectionMatrix();}
 $('modeBtn').addEventListener('click',()=>setMode(state.mode==='fp'?'orbit':'fp'));
 
+// ---------- saved view (save.js): where you stand when walking, else where the orbit view looks ----------
+const r2=(v,d=2)=>+v.toFixed(d);
+export function viewState(){
+  if(state.mode==='fp'&&!state.rider)return {mode:'fp',x:r2(player.x),z:r2(player.z),y:r2(player.y),yaw:r2(player.yaw,3),pitch:r2(player.pitch,3)};
+  const t=state.rider?target:tTgt;return {mode:'orbit',x:r2(t.x),z:r2(t.z),az:r2(tAz,3),pol:r2(tPol,3),dist:r2(tDist,1)};}
+export function setView(v){
+  tTgt.set(v.x,0,v.z);const r=Math.hypot(v.x,v.z);if(r>PANR)tTgt.multiplyScalar(PANR/r);
+  if(v.mode==='fp'){setMode('fp');   // findGround: the saved spot, or the nearest walkable one
+    player.yaw=+v.yaw||0;player.pitch=clamp(+v.pitch||0,-1.35,1.35);drop.on=false;}
+  else{if(isFinite(v.az))az=tAz=v.az;if(isFinite(v.pol))pol=tPol=clamp(v.pol,.08,1.5);if(isFinite(v.dist))dist=tDist=clamp(v.dist,9,220);
+    tTgt.y=Math.max(heightAt(tTgt.x,tTgt.z),SEA)+HOFF;target.copy(tTgt);}}
+
 function hideHint(){$('hint').classList.add('gone');}
 setTimeout(hideHint,7000);
 

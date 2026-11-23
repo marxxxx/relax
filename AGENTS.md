@@ -12,7 +12,7 @@ There is no build step, package manager, linter or test suite. Everything that s
 
 - Run locally: serve `web/` over HTTP (ES modules don't load from `file://`), e.g. `python3 -m http.server -d web 8000`, then open http://localhost:8000.
 - Three.js **r128** is loaded as a global `THREE` from cdnjs in `web/index.html` — modules use `THREE.*` without importing it. Stick to the r128 API (e.g. `outputEncoding`/`sRGBEncoding`, not `outputColorSpace`).
-- Debug handle: `window.__lichtung` exposes `{player, setMode, animals, state, camera, vrTap}` in the console (`vrTap()` = the VR select/tap).
+- Debug handle: `window.__lichtung` exposes `{player, setMode, animals, state, camera, vrTap, save}` in the console (`vrTap()` = the VR select/tap, `save.writeSave()` = save now).
 
 ## Deployment
 
@@ -28,6 +28,7 @@ There is no build step, package manager, linter or test suite. Everything that s
 - **Weather in shaders** (`materials.js`): `WU` holds global uniforms (time, wind, snow, wetness, sun). `weatherize(mat, key)` patches built-in materials via `onBeforeCompile` to add snow cover, wetness, wind sway; `key` (`'terrain'`, `'grass'`, …) selects extra shader code and the program cache key.
 - **Rendering paths** (`renderer.js`, `post.js`): on WebGL2 (`POST` true) the scene renders to a float target and `post.js` does height fog, sun shafts, bloom, ACES tone mapping and colour grade (always on); on WebGL1 it falls back to built-in tone mapping and `FogExp2`. `environment.js` drives both paths' fog/grade uniforms via `PP`.
 - **VR** (`xr.js`, WebXR `immersive-vr`, aimed at phone-in-headset/Cardboard: 3DoF, one button): while presenting, `state.xr` is true, the camera sits in `rig` (`renderer.js`) which follows `player` at eye height, and the headset sets the camera's local pose — so read the camera's *world* position (`getWorldPosition`), not `camera.position`. No post pass in VR: `useBuiltIn(true)` (`post.js`) switches to the WebGL1 look (ACES tone mapping + `fogX`). Custom `ShaderMaterial`s with `fog:true` need `THREE.UniformsLib.fog` in their uniforms. Input: gaze at the ground + tap = teleport, otherwise tap = next viewpoint (`VIEWS`).
+- **Save/resume** (`save.js`, loaded last, no `rnd()`): writes `{player, weather, time, savedAt}` to `localStorage['savegame']` every second (`updateSave` in `tick`) and on `pagehide`/`beforeunload`/tab hidden; restores it at import (view via `viewState`/`setView` in `controls.js`: walking spot or orbit target, x/z = ground plane; weather = the selected preset key of `W`, set without blending; in-game hour plus a real timestamp). "Neu beginnen" clears it and reloads.
 - **Mobile**: `isMobile` (`util.js`) reduces pixel ratio, shadows and instance counts throughout; keep that in mind when adding geometry or lights.
 
 ## Code style

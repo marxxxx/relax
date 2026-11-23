@@ -27,6 +27,7 @@
 <link rel="modulepreload" href="js/precipitation.js">
 <link rel="modulepreload" href="js/props.js">
 <link rel="modulepreload" href="js/renderer.js">
+<link rel="modulepreload" href="js/save.js">
 <link rel="modulepreload" href="js/sea.js">
 <link rel="modulepreload" href="js/sky.js">
 <link rel="modulepreload" href="js/state.js">
@@ -61,6 +62,7 @@
 </div>
 
 <div class="joy" id="joy" aria-hidden="true"><div class="joyKnob" id="joyKnob"></div></div>
+<div class="toast gone" id="toast" role="status"></div>
 <div class="hint" id="hint">Ziehen zum Umsehen, zwei Finger oder Rechtsklick zum Verschieben, Pinch oder Mausrad zum Zoomen</div>
 
 <div class="panel" id="panel">
@@ -87,6 +89,10 @@
       <button class="chip" data-w="sturm" aria-pressed="false"><span>💨</span>Sturm</button>
       <button class="chip" data-w="schnee" aria-pressed="false"><span>❄️</span>Schnee</button>
       <button class="chip" data-w="nebel" aria-pressed="false"><span>🌫️</span>Nebel</button>
+    </div>
+    <div class="saveRow">
+      <span class="saveTxt" id="saveInfo"></span>
+      <button class="abtn" id="resetBtn" aria-label="Gespeicherten Stand löschen und neu beginnen">Neu beginnen</button>
     </div>
     <div class="animalRow">
       <span class="lbl" aria-hidden="true">🐾</span>
