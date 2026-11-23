@@ -38,8 +38,9 @@ const UI=await step(.5,()=>load('./ui.js'));
 const PO=await step(.5,()=>load('./post.js'));
 const ST=await step(.5,()=>load('./state.js'));
 const AN=await step(1,()=>load('./animals.js'));
-const VA=await step(15,()=>load('./valley.js'));   // LAST world module on purpose: keeps the seeded rnd() layout of the world above unchanged
+const VA=await step(14.5,()=>load('./valley.js'));   // LAST world module on purpose: keeps the seeded rnd() layout of the world above unchanged
 const XR=await step(.5,()=>load('./xr.js'));       // VR mode; uses no rnd()
+const SA=await step(.5,()=>load('./save.js'));     // restores the saved view, weather and time; uses no rnd()
 const {camera,renderer,scene}=R,{WU}=MA,{state,SPEEDS}=ST,{player,setMode}=CO,{animals}=AN;
 
 // ---------- main loop ----------
@@ -59,6 +60,7 @@ function tick(dt){
   XR.updateXR(dt);
   AU.updateAudio(dt,env);
   UI.updateUI(dt,env.sy);
+  SA.updateSave();
 
   camera.updateMatrixWorld();PO.renderFrame();
 }
@@ -68,5 +70,5 @@ setTimeout(()=>$('loader').classList.add('gone'),250);
 
 let lastT=performance.now();
 function frame(now){tick(clamp((now-lastT)/1000,0,.05));lastT=now;}
-window.__lichtung={player,setMode,animals,state,camera,vrTap:XR.onSelect};
+window.__lichtung={player,setMode,animals,state,camera,vrTap:XR.onSelect,save:SA};
 renderer.setAnimationLoop(frame);   // not window rAF: that stops while a VR session is presenting

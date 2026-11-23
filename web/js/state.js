@@ -1,6 +1,7 @@
 // Mutable state shared between modules. Imported bindings are read-only,
 // so everything that several modules write lives on these objects.
-export const state={hour:5.75,playing:true,dragging:false,speedI:0,wKey:'klar',T:0,flash:0,nextBolt:6,snowCover:0,wet:0,mode:'orbit',indoor:0,animalFrac:.5,rider:null,watch:null,xr:false};
+export const state={hour:5.75,playing:true,dragging:false,speedI:0,wKey:'klar',T:0,flash:0,nextBolt:6,snowCover:0,wet:0,mode:'orbit',indoor:0,animalFrac:.5,rider:null,watch:null,xr:false,
+  wLive:true,live:null,wErr:'',nextLive:0,savedAt:null};   // wLive: follow the real weather (weather.js), live: last Open-Meteo reading, savedAt: last save (save.js)
 export const SPEEDS=[[20,'1 h / 20 s'],[8,'1 h / 8 s'],[2,'1 h / 2 s']];
 
 // ---------- weather presets ----------
